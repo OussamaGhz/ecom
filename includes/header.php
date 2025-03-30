@@ -1,3 +1,6 @@
+<?php
+include_once 'functions.php'; // Ensure the file is included only once
+?>
 <!DOCTYPE html>
 <html>
 <head>

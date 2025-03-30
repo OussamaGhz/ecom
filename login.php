@@ -1,7 +1,10 @@
 <?php
-include 'config/database.php';
-include 'includes/header.php';
-include 'includes/functions.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+include_once 'config/database.php';
+include_once 'includes/header.php';
+include_once 'includes/functions.php';
 session_start();
 
 $error = '';

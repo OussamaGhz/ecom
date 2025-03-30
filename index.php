@@ -1,25 +1,27 @@
 <?php
-include 'config/database.php';
-include 'includes/header.php';
+session_start();
+require 'config/database.php';
 
-$query = "SELECT * FROM items";
-$stmt = $conn->prepare($query);
-$stmt->execute();
-$items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+$username = $_SESSION['username'];
+$is_admin = $_SESSION['is_admin'];
 ?>
 
-<div class="container">
-    <h1>Welcome to Our E-Commerce Store</h1>
-    <div class="items-grid">
-        <?php foreach($items as $item): ?>
-            <div class="item-card">
-                <img src="uploads/<?= $item['image']; ?>" alt="<?= $item['name']; ?>">
-                <h2><?= $item['name']; ?></h2>
-                <p>Price: <?= $item['price']; ?> DA</p>
-                <a href="item.php?id=<?= $item['id']; ?>" class="btn">View Details</a>
-            </div>
-        <?php endforeach; ?>
-    </div>
-</div>
-
-<?php include 'includes/footer.php'; ?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home</title>
+</head>
+<body>
+    <h1>Welcome, <?php echo htmlspecialchars($username); ?>!</h1>
+    <?php if ($is_admin): ?>
+        <a href="admin.php">Go to Admin Panel</a><br>
+    <?php endif; ?>
+    <a href="logout.php">Logout</a>
+</body>
+</html>
