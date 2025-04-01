@@ -26,22 +26,32 @@ if (!$item) {
     exit();
 }
 
+// Prevent adding items with stock = 0
+if ($item['stock'] <= 0) {
+    echo "This item is out of stock.";
+    exit();
+}
+
 // Handle adding item to cart
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
 
+    // Ensure the cart exists
     if (!isset($_SESSION['cart'])) {
         $_SESSION['cart'] = [];
     }
 
-    if (isset($_SESSION['cart'][$item_id])) {
-        $_SESSION['cart'][$item_id] += $quantity;
-    } else {
-        $_SESSION['cart'][$item_id] = $quantity;
-    }
+    // Get the current quantity of the item in the cart (if any)
+    $current_cart_quantity = isset($_SESSION['cart'][$item_id]) ? $_SESSION['cart'][$item_id] : 0;
 
-    // Show a success message and stay on the same page
-    $message = "Item successfully added to cart!";
+    // Check if the total quantity (current + new) exceeds the stock
+    if ($current_cart_quantity + $quantity > $item['stock']) {
+        $message = "You cannot add more than the available stock. Current stock: " . $item['stock'];
+    } else {
+        // Update the cart
+        $_SESSION['cart'][$item_id] = $current_cart_quantity + $quantity;
+        $message = "Item successfully added to cart!";
+    }
 }
 ?>
 

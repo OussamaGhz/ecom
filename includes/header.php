@@ -11,10 +11,13 @@ include_once 'functions.php';
 <nav>
     <a href="index.php">Home</a>
     <?php if (isLoggedIn()): ?>
-        <a href="cart.php">Cart</a>
+        
+      
         <?php if (isAdmin()): ?>
             <a href="admin.php">Admin Panel</a>
         <?php endif; ?>
+        <a href="cart.php">Cart</a>
+        <a href="order_history.php">My Orders</a>
         <a href="logout.php">Logout</a>
     <?php else: ?>
         <a href="login.php">Login</a>

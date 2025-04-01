@@ -1,6 +1,6 @@
 <?php
 include 'config/database.php';
-include 'includes/header.php';
+include_once 'includes/header.php';
 session_start();
 
 $error = '';

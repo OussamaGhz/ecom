@@ -10,6 +10,12 @@ if (!isset($_SESSION['user_id'])) {
 
 $cart_items = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
 
+// Debugging: Print the cart session data
+echo "<pre>";
+echo "Cart Session Data:\n";
+print_r($cart_items);
+echo "</pre>";
+
 // Fetch item details from the database
 $items = [];
 $total = 0;
@@ -19,12 +25,19 @@ if (!empty($cart_items)) {
     $stmt = $conn->query("SELECT * FROM items WHERE id IN ($ids)");
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    foreach ($items as &$item) {
+    $items = array_map(function($item) use ($cart_items, &$total) {
         $quantity = $cart_items[$item['id']];
-        $item['quantity'] = $quantity;
-        $item['subtotal'] = $item['price'] * $quantity;
-        $total += $item['subtotal'];
-    }
+        $subtotal = $item['price'] * $quantity;
+        $total += $subtotal; // Add the subtotal to the total
+        return [
+            'id' => $item['id'],
+            'name' => $item['name'],
+            'price' => $item['price'],
+            'stock' => $item['stock'], // Include stock for validation
+            'quantity' => $quantity,
+            'subtotal' => $subtotal
+        ];
+    }, $items);
 }
 
 // Handle deleting an item
@@ -38,13 +51,30 @@ if (isset($_GET['delete'])) {
 // Handle updating quantities
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
     foreach ($_POST['quantities'] as $item_id => $quantity) {
+        $item_id = intval($item_id); // Ensure the item ID is an integer
+        $quantity = intval($quantity); // Ensure the quantity is an integer
+
+        // Fetch the stock for the item
+        foreach ($items as $item) {
+            if ($item['id'] == $item_id) {
+                $stock = $item['stock'];
+                break;
+            }
+        }
+
+        // Validate the quantity against the stock
+        if ($quantity > $stock) {
+            $quantity = $stock; // Cap the quantity at the stock limit
+            $error_message = "The quantity for '{$item['name']}' has been capped at the available stock ($stock).";
+        }
+
         if ($quantity > 0) {
-            $_SESSION['cart'][$item_id] = $quantity;
+            $_SESSION['cart'][$item_id] = $quantity; // Update the quantity
         } else {
-            unset($_SESSION['cart'][$item_id]);
+            unset($_SESSION['cart'][$item_id]); // Remove the item if quantity is 0
         }
     }
-    header("Location: cart.php");
+    header("Location: cart.php"); // Redirect to avoid form resubmission
     exit();
 }
 ?>
@@ -57,6 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
 </head>
 <body>
     <h1>Your Cart</h1>
+
+    <?php if (!empty($error_message)): ?>
+        <p style="color: red;"><?php echo htmlspecialchars($error_message); ?></p>
+    <?php endif; ?>
 
     <?php if (empty($items)): ?>
         <p>Your cart is empty.</p>

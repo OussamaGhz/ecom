@@ -1,5 +1,5 @@
 <!-- includ header -->
-include_once 'includes/header.php';
+<!-- include 'includes/header.php'; -->
 <?php
 function isLoggedIn()
 {
@@ -11,10 +11,10 @@ function isAdmin()
     return isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1;
 }
 
-function redirectIfNotLoggedIn()
-{
-    if (!isLoggedIn()) {
-        header("Location: login.php");
-        exit;
-    }
-}
+// function redirectIfNotLoggedIn()
+// {
+//     if (!isLoggedIn()) {
+//         header("Location: login.php");
+//         exit;
+//     }
+// }
