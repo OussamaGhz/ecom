@@ -1,0 +1,130 @@
+/* Main Navigation */
+.main-nav {
+    background-color: var(--background);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 2px 4px var(--shadow);
+    position: relative;
+    z-index: 10;
+  }
+  
+  .nav-list {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    justify-content: center;
+  }
+  
+  .nav-link {
+    display: block;
+    padding: var(--space-4) var(--space-5);
+    color: var(--text);
+    font-weight: var(--font-medium);
+    transition: color 0.2s ease;
+  }
+  
+  .nav-link:hover,
+  .nav-link.active {
+    color: var(--primary-500);
+  }
+  
+  .admin-link {
+    color: var(--accent-orange);
+  }
+  
+  .mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: var(--text-xl);
+    cursor: pointer;
+    padding: var(--space-2);
+  }
+  
+  /* Mobile Navigation */
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--background);
+    z-index: 999;
+    padding: var(--space-8) var(--space-4);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+  }
+  
+  .mobile-nav.active {
+    transform: translateX(0);
+  }
+  
+  .mobile-nav ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .mobile-nav ul li a {
+    display: block;
+    padding: var(--space-4);
+    font-size: var(--text-lg);
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  
+  /* Pagination */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-6);
+    gap: var(--space-2);
+  }
+  
+  .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-weight: var(--font-medium);
+    color: var(--text);
+    transition: all 0.2s ease;
+  }
+  
+  .page-link:hover {
+    background-color: var(--neutral-200);
+    border-color: var(--neutral-300);
+  }
+  
+  .page-link.active {
+    background-color: var(--primary-500);
+    border-color: var(--primary-500);
+    color: white;
+  }
+  
+  /* Breadcrumbs */
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--space-5);
+    color: var(--neutral-600);
+    font-size: var(--text-sm);
+  }
+  
+  .breadcrumbs a {
+    color: var(--neutral-600);
+  }
+  
+  .breadcrumbs a:hover {
+    color: var(--primary-500);
+  }
+  
+  .separator {
+    margin: 0 var(--space-2);
+    font-size: var(--text-xs);
+  }

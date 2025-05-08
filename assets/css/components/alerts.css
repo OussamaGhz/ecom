@@ -1,0 +1,31 @@
+/* Alert Component */
+.alert {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-4);
+    border-left: 4px solid transparent;
+  }
+  
+  .alert-success {
+    background-color: rgba(56, 176, 0, 0.1);
+    border-left-color: var(--success);
+    color: var(--success);
+  }
+  
+  .alert-warning {
+    background-color: rgba(255, 183, 0, 0.1);
+    border-left-color: var(--warning);
+    color: var(--warning);
+  }
+  
+  .alert-error {
+    background-color: rgba(214, 40, 40, 0.1);
+    border-left-color: var(--error);
+    color: var(--error);
+  }
+  
+  .alert-info {
+    background-color: rgba(76, 201, 240, 0.1);
+    border-left-color: var(--info);
+    color: var(--info);
+  }

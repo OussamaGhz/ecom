@@ -1,0 +1,105 @@
+/* Variables */
+:root {
+    /* Primary Colors */
+    --primary-100: #e6f2e8;
+    --primary-200: #c2e0c6;
+    --primary-300: #9ecda5;
+    --primary-400: #7ab984;
+    --primary-500: #56a662; /* Base Primary */
+    --primary-600: #45854f;
+    --primary-700: #34643c;
+    --primary-800: #224228;
+    --primary-900: #112114;
+  
+    /* Neutrals */
+    --neutral-100: #f8f9fa;
+    --neutral-200: #e9ecef;
+    --neutral-300: #dee2e6;
+    --neutral-400: #ced4da;
+    --neutral-500: #adb5bd;
+    --neutral-600: #6c757d;
+    --neutral-700: #495057;
+    --neutral-800: #343a40;
+    --neutral-900: #212529;
+  
+    /* Accents */
+    --accent-blue: #4361ee;
+    --accent-orange: #ff7d00;
+  
+    /* Feedback */
+    --success: #38b000;
+    --warning: #ffb700;
+    --error: #d62828;
+    --info: #4cc9f0;
+  
+    /* Background & Text */
+    --bg-light: #ffffff;
+    --bg-dark: #121212;
+    --text-light: #f8f9fa;
+    --text-dark: #212529;
+  
+    /* Theme Variables - for easy switching */
+    --background: var(--bg-light);
+    --text: var(--text-dark);
+    --border: var(--neutral-300);
+    --shadow: rgba(0, 0, 0, 0.1);
+  
+    /* Font Families */
+    --font-primary: "Poppins", sans-serif;
+    --font-secondary: "Inter", sans-serif;
+  
+    /* Font Sizes */
+    --text-xs: 0.75rem; /* 12px */
+    --text-sm: 0.875rem; /* 14px */
+    --text-base: 1rem; /* 16px */
+    --text-lg: 1.125rem; /* 18px */
+    --text-xl: 1.25rem; /* 20px */
+    --text-2xl: 1.5rem; /* 24px */
+    --text-3xl: 1.875rem; /* 30px */
+    --text-4xl: 2.25rem; /* 36px */
+  
+    /* Line Heights */
+    --leading-none: 1;
+    --leading-tight: 1.25;
+    --leading-normal: 1.5;
+    --leading-loose: 2;
+  
+    /* Font Weights */
+    --font-light: 300;
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+  
+    /* Spacing Scale */
+    --space-1: 0.25rem; /* 4px */
+    --space-2: 0.5rem; /* 8px */
+    --space-3: 0.75rem; /* 12px */
+    --space-4: 1rem; /* 16px */
+    --space-5: 1.5rem; /* 24px */
+    --space-6: 2rem; /* 32px */
+    --space-8: 3rem; /* 48px */
+    --space-10: 4rem; /* 64px */
+    --space-12: 6rem; /* 96px */
+  
+    /* Container Width */
+    --container-sm: 640px;
+    --container-md: 768px;
+    --container-lg: 1024px;
+    --container-xl: 1280px;
+  
+    /* Border Radius */
+    --radius-sm: 0.125rem; /* 2px */
+    --radius-md: 0.25rem; /* 4px */
+    --radius-lg: 0.5rem; /* 8px */
+    --radius-xl: 1rem; /* 16px */
+    --radius-full: 9999px; /* Pill shape */
+  }
+  
+  /* Dark theme */
+  .dark-theme {
+    --background: var(--bg-dark);
+    --text: var(--text-light);
+    --border: var(--neutral-800);
+    --shadow: rgba(255, 255, 255, 0.05);
+  }

@@ -1,0 +1,71 @@
+/* Auth Pages (Login/Register) */
+.auth-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 600px;
+    box-shadow: 0 10px 30px var(--shadow);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin: var(--space-6) 0;
+  }
+  
+  .auth-form {
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .auth-header {
+    margin-bottom: var(--space-5);
+  }
+  
+  .auth-header h1 {
+    margin-bottom: var(--space-3);
+  }
+  
+  .auth-header p {
+    color: var(--neutral-600);
+  }
+  
+  .auth-separator {
+    display: flex;
+    align-items: center;
+    margin: var(--space-5) 0;
+    color: var(--neutral-500);
+  }
+  
+  .auth-separator::before,
+  .auth-separator::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--border);
+  }
+  
+  .auth-separator span {
+    padding: 0 var(--space-3);
+  }
+  
+  .social-auth {
+    display: flex;
+    gap: var(--space-3);
+  }
+  
+  .btn-social {
+    flex: 1;
+  }
+  
+  .auth-footer {
+    margin-top: auto;
+    text-align: center;
+  }
+  
+  .auth-image {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .auth-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }

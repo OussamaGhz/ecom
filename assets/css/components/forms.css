@@ -1,0 +1,118 @@
+/* Form Styles */
+.form-group {
+    margin-bottom: var(--space-5);
+  }
+  
+  .form-label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-weight: var(--font-medium);
+    color: var(--text);
+  }
+  
+  .form-control {
+    display: block;
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--text);
+    background-color: var(--bg-light);
+    background-clip: padding-box;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: border-color 0.2s ease;
+  }
+  
+  .dark-theme .form-control {
+    background-color: var(--neutral-800);
+    color: var(--text-light);
+  }
+  
+  .form-control:focus {
+    border-color: var(--primary-400);
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(86, 166, 98, 0.25);
+  }
+  
+  /* Dropdown */
+  .dropdown {
+    position: relative;
+  }
+  
+  .dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-base);
+    color: var(--text);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .dropdown-toggle:hover {
+    border-color: var(--primary-400);
+  }
+  
+  .dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + var(--space-2));
+    min-width: 180px;
+    padding: var(--space-2) 0;
+    background-color: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 5px 15px var(--shadow);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+  }
+  
+  .dropdown-menu.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  
+  .dropdown-menu a {
+    display: block;
+    padding: var(--space-2) var(--space-4);
+    color: var(--text);
+    transition: background-color 0.2s ease;
+  }
+  
+  .dropdown-menu a:hover {
+    background-color: var(--neutral-100);
+    color: var(--primary-500);
+  }
+  
+  .dark-theme .dropdown-menu a:hover {
+    background-color: var(--neutral-800);
+  }
+  
+  /* Form Rows */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+  
+  /* Form Section */
+  .form-section {
+    margin-bottom: var(--space-6);
+  }
+  
+  .form-section h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-4);
+  }

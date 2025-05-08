@@ -1,9 +1,13 @@
 <?php
 include 'config/database.php';
-include_once 'includes/header.php';
-session_start();
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $error = '';
+$success = '';
+$page_title = "Register";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = htmlspecialchars($_POST['username']);
@@ -20,23 +24,107 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $query = "INSERT INTO users (username, email, password) VALUES (:username, :email, :password)";
         $stmt = $conn->prepare($query);
-        $stmt->execute(['username' => $username, 'email' => $email, 'password' => $password]);
-
-        header("Location: login.php");
-        exit;
+        
+        if ($stmt->execute(['username' => $username, 'email' => $email, 'password' => $password])) {
+            $success = "Registration successful! You can now login.";
+        } else {
+            $error = "Registration failed. Please try again.";
+        }
     }
 }
+
+include 'includes/header.php';
 ?>
 
 <div class="container">
-    <h1>Register</h1>
-    <?php if ($error): ?>
-        <div class="error"><?= $error; ?></div>
-    <?php endif; ?>
-    <form method="POST">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Register</button>
-    </form>
+    <div class="auth-wrapper">
+        <div class="auth-form">
+            <div class="auth-header">
+                <h1>Create an Account</h1>
+                <p>Join our community and start shopping with us today!</p>
+            </div>
+            
+            <?php if ($error): ?>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?php echo $error; ?>
+                </div>
+            <?php endif; ?>
+            
+            <?php if ($success): ?>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <?php echo $success; ?>
+                    <a href="login.php">Login now</a>
+                </div>
+            <?php endif; ?>
+            
+            <form method="POST" action="" data-validate="true">
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Choose a username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="password-input">
+                        <input type="password" id="password" name="password" class="form-control" placeholder="Create a password" required>
+                        <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="strength-meter"></div>
+                        <span class="strength-text">Password strength</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Confirm your password" required>
+                </div>
+                
+                <div class="form-check">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </form>
+            
+            <div class="auth-separator">
+                <span>Or register with</span>
+            </div>
+            
+            <div class="social-auth">
+                <button class="btn btn-outline btn-social">
+                    <i class="fab fa-google"></i> Google
+                </button>
+                <button class="btn btn-outline btn-social">
+                    <i class="fab fa-facebook-f"></i> Facebook
+                </button>
+            </div>
+            
+            <div class="auth-footer">
+                <p>Already have an account? <a href="login.php">Login</a></p>
+            </div>
+        </div>
+        
+        <div class="auth-image">
+            <img src="assets/images/register-image.jpg" alt="Register">
+            <div class="auth-image-overlay">
+                <h2>Join ShopEasy</h2>
+                <p>Get exclusive deals, faster checkout, and personalized recommendations.</p>
+            </div>
+        </div>
+    </div>
 </div>
+
+<?php include 'includes/footer.php'; ?>
