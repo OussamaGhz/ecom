@@ -10,7 +10,6 @@
   
   /* Main Content */
   .site-content {
-    padding: var(--space-6) 0;
     min-height: calc(100vh - 300px); /* Adjust based on header/footer height */
   }
   

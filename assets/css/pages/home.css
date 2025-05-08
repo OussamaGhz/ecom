@@ -1,93 +1,237 @@
 /* Hero Section */
 .hero {
-    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
-      url("../../images/hero-bg.jpg");
-    background-size: cover;
-    background-position: center;
-    color: white;
-    padding: var(--space-10) 0;
-    text-align: center;
-    margin-bottom: var(--space-8);
+  position: relative;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  padding: var(--space-10) 0;
+  text-align: center;
+  margin-bottom: var(--space-8);
+  overflow: hidden; /* Ensures the background stays within the hero section */
+}
+
+.hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+        url('assets/images/hero.png'); /* Using the same path that worked before */
+  background-size: cover;
+  background-position: center;
+  filter: blur(1px);
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2; /* Ensures content is above the blurred background */
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.hero h1 {
+  font-size: var(--text-4xl);
+  margin-bottom: var(--space-4);
+  color: black;
+}
+
+.hero p {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-5);
+}
+
+/* Container inside hero should be above the blurred background */
+.hero .container {
+  position: relative;
+  z-index: 2;
+}
+
+/* About Us Section */
+.about-section {
+  padding: var(--space-8) 0;
+  background-color: var(--neutral-50);
+  margin-bottom: var(--space-8);
+}
+
+.about-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .about-container {
+    grid-template-columns: 1fr;
   }
   
-  .hero-content {
-    max-width: 600px;
-    margin: 0 auto;
-  }
-  
-  .hero h1 {
-    font-size: var(--text-4xl);
-    margin-bottom: var(--space-4);
-    color: white;
-  }
-  
-  .hero p {
-    font-size: var(--text-xl);
+  .about-image {
     margin-bottom: var(--space-5);
   }
+}
+
+.about-image {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 10px 25px var(--shadow);
+}
+
+.about-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.about-image:hover img {
+  transform: scale(1.03);
+}
+
+.about-content h2 {
+  font-size: var(--text-3xl);
+  margin-bottom: var(--space-2);
+  color: var(--primary-600);
+}
+
+.about-tagline {
+  font-size: var(--text-lg);
+  font-weight: var(--font-medium);
+  color: var(--primary-500);
+  margin-bottom: var(--space-4);
+  font-style: italic;
+}
+
+.about-content p {
+  margin-bottom: var(--space-3);
+  line-height: 1.6;
+}
+
+.about-content .btn {
+  margin-top: var(--space-4);
+}
   
-  /* Featured Categories */
-  .featured-categories {
-    margin-bottom: var(--space-8);
-  }
-  
-  .category-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: var(--space-4);
-  }
-  
-  .category-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: var(--space-4);
-    border-radius: var(--radius-lg);
-    background-color: var(--background);
-    box-shadow: 0 2px 10px var(--shadow);
-    transition: all 0.3s ease;
-    color: var(--text);
-    text-align: center;
-  }
-  
-  .category-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px var(--shadow);
-    color: var(--primary-500);
-  }
-  
-  .category-icon {
-    font-size: 2.5rem;
-    margin-bottom: var(--space-3);
-    color: var(--primary-500);
-  }
-  
-  .category-card h3 {
-    font-size: var(--text-lg);
-    font-weight: var(--font-medium);
-  }
-  
-  /* Promo banner */
-  .promo-banner {
-    background-color: var(--primary-600);
-    padding: var(--space-6) 0;
-    margin: var(--space-8) 0;
-    color: white;
-    text-align: center;
-  }
-  
-  .promo-content {
-    max-width: 600px;
-    margin: 0 auto;
-  }
-  
-  .promo-banner h2 {
-    color: white;
-    margin-bottom: var(--space-3);
-    font-size: var(--text-3xl);
-  }
-  
-  .promo-banner p {
-    margin-bottom: var(--space-4);
-    font-size: var(--text-lg);
-  }
+/* Featured Categories */
+.featured-categories {
+  margin-bottom: var(--space-8);
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background-color: var(--background);
+  box-shadow: 0 2px 10px var(--shadow);
+  transition: all 0.3s ease;
+  color: var(--text);
+  text-align: center;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px var(--shadow);
+  color: var(--primary-500);
+}
+
+.category-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-3);
+  color: var(--primary-500);
+}
+
+.category-card h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-medium);
+}
+
+/* Benefits Section */
+.benefits-section {
+  padding: var(--space-8) 0;
+  background-color: white;
+  margin-bottom: var(--space-8);
+}
+
+.benefits-section .section-title {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--space-5);
+}
+
+.benefit-card {
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background-color: white;
+  box-shadow: 0 5px 15px var(--shadow);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.benefit-card:hover {
+  transform: translateY(-5px);
+}
+
+.benefit-icon {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background-color: var(--primary-50);
+  color: var(--primary-600);
+  font-size: 1.8rem;
+  margin-bottom: var(--space-4);
+}
+
+.benefit-card h3 {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-3);
+  color: var(--primary-600);
+}
+
+.benefit-card p {
+  color: var(--neutral-700);
+  line-height: 1.5;
+}
+
+/* Promo banner */
+.promo-banner {
+  background-color: var(--primary-600);
+  padding: var(--space-6) 0;
+  margin: var(--space-8) 0;
+  color: white;
+  text-align: center;
+}
+
+.promo-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.promo-banner h2 {
+  color: white;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-3xl);
+}
+
+.promo-banner p {
+  margin-bottom: var(--space-4);
+  font-size: var(--text-lg);
+}

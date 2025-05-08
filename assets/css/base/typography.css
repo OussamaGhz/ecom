@@ -72,7 +72,3 @@ a:hover {
   gap: var(--space-3);
 }
 
-/* Page title */
-.page-title {
-  margin-bottom: var(--space-6);
-}

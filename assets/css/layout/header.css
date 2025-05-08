@@ -128,3 +128,7 @@
     background-color: var(--primary-500);
     border-radius: var(--radius-full);
   }
+
+  .page-title {
+    margin-bottom: 0;
+  }
