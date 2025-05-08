@@ -23,3 +23,4 @@
 @import 'pages/cart.css';
 @import 'pages/checkout.css';
 @import 'pages/auth.css';
+@import 'pages/admin.css'; /* Add this line */
