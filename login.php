@@ -5,7 +5,10 @@ ini_set('display_errors', 1);
 include_once 'config/database.php';
 include_once 'includes/header.php';
 include_once 'includes/functions.php';
-session_start();
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start(); // Start the session only if it's not already active
+}
 
 $error = '';
 
@@ -40,4 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="password" name="password" placeholder="Password" required>
         <button type="submit">Login</button>
     </form>
+    <div class="admin-login">
+        <p>Are you an admin? <a href="admin_login.php">Login as Admin</a></p>
+    </div>
 </div>

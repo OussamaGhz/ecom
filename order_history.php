@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'config/database.php';
+include 'includes/header.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
