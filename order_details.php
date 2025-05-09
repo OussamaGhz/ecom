@@ -8,56 +8,55 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
-$order_id = $_GET['order_id'] ?? null;
-if (!$order_id) {
-    header("Location: view_orders.php");
-    exit();
-}
-
 // Set page title
 $page_title = "Order Details";
 
-// Fetch order details
-$stmt = $conn->prepare("
-    SELECT orders.*, users.username, users.email, users.phone
-    FROM orders 
-    JOIN users ON orders.user_id = users.id
-    WHERE orders.id = :order_id
-");
-$stmt->execute([':order_id' => $order_id]);
-$order = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$order) {
+// Check if order_id is provided
+if (!isset($_GET['order_id']) || empty($_GET['order_id'])) {
+    $_SESSION['error'] = "No order ID specified.";
     header("Location: view_orders.php");
     exit();
 }
 
-// Handle status update
-if (isset($_POST['update_status'])) {
-    $new_status = $_POST['status'];
-    
-    $updateStmt = $conn->prepare("UPDATE orders SET status = :status WHERE id = :id");
-    $updateStmt->execute([
-        ':status' => $new_status,
-        ':id' => $order_id
-    ]);
-    
-    // Refresh order data
-    $stmt->execute([':order_id' => $order_id]);
-    $order = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    $statusMessage = "Order status updated to " . ucfirst($new_status);
-}
+$order_id = intval($_GET['order_id']);
 
-// Fetch order items
-$stmt = $conn->prepare("
-    SELECT order_items.*, items.name, items.image, items.brand, items.color, items.style, items.gender, items.size
-    FROM order_items 
-    JOIN items ON order_items.item_id = items.id 
-    WHERE order_items.order_id = :order_id
-");
-$stmt->execute([':order_id' => $order_id]);
-$orderItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    // Get order details
+    $orderStmt = $conn->prepare("
+        SELECT orders.*, users.username, users.email, users.phone 
+        FROM orders 
+        LEFT JOIN users ON orders.user_id = users.id 
+        WHERE orders.id = :order_id
+    ");
+    $orderStmt->execute([':order_id' => $order_id]);
+    $order = $orderStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$order) {
+        $_SESSION['error'] = "Order not found.";
+        header("Location: view_orders.php");
+        exit();
+    }
+    
+    // Get order items
+    $itemsStmt = $conn->prepare("
+        SELECT oi.*, i.name, i.brand, i.style, i.image, i.size, i.color
+        FROM order_items oi
+        JOIN items i ON oi.item_id = i.id
+        WHERE oi.order_id = :order_id
+    ");
+    $itemsStmt->execute([':order_id' => $order_id]);
+    $orderItems = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get shipping address if available
+    $addressStmt = $conn->prepare("SELECT * FROM shipping_addresses WHERE order_id = :order_id");
+    $addressStmt->execute([':order_id' => $order_id]);
+    $address = $addressStmt->fetch(PDO::FETCH_ASSOC);
+    
+} catch (PDOException $e) {
+    $_SESSION['error'] = "Database error: " . $e->getMessage();
+    header("Location: view_orders.php");
+    exit();
+}
 
 // Include header after setting variables
 include_once 'includes/header.php';
@@ -70,96 +69,124 @@ include_once 'includes/header.php';
             <a href="view_orders.php" class="btn btn-sm btn-outline">
                 <i class="fas fa-arrow-left"></i> Back to Orders
             </a>
+            <a href="javascript:window.print()" class="btn btn-sm btn-outline">
+                <i class="fas fa-print"></i> Print
+            </a>
         </div>
     </div>
-
-    <?php if (isset($statusMessage)): ?>
+    
+    <?php if (isset($_SESSION['success'])): ?>
         <div class="alert alert-success">
-            <i class="fas fa-check-circle"></i> <?php echo $statusMessage; ?>
+            <i class="fas fa-check-circle"></i> <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+        </div>
+    <?php endif; ?>
+    
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger">
+            <i class="fas fa-times-circle"></i> <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
         </div>
     <?php endif; ?>
 
     <div class="admin-card">
-        <div class="card-header">
-            <h2><i class="fas fa-info-circle"></i> Order Information</h2>
-            
-            <div class="status-badge-container">
-                <?php 
-                    $statusClass = 'status-default';
-                    if (isset($order['status'])) {
-                        switch($order['status']) {
-                            case 'pending': $statusClass = 'status-warning'; break;
-                            case 'processing': $statusClass = 'status-info'; break;
-                            case 'shipped': $statusClass = 'status-primary'; break;
-                            case 'delivered': $statusClass = 'status-success'; break;
-                            case 'cancelled': $statusClass = 'status-danger'; break;
-                        }
-                    } else {
-                        $statusClass = 'status-warning';
-                    }
-                ?>
-                <span class="status-badge large <?php echo $statusClass; ?>">
-                    <?php echo $order['status'] ?? 'Pending'; ?>
-                </span>
+        <div class="order-header">
+            <div class="order-status-section">
+                <h2><i class="fas fa-info-circle"></i> Order Status</h2>
                 
-                <button class="btn btn-sm btn-outline" onclick="document.getElementById('status-form').style.display = 'flex';">
-                    <i class="fas fa-edit"></i> Update Status
-                </button>
+                <?php
+                // Status class mapping
+                $statusClass = 'status-default';
+                if (isset($order['status'])) {
+                    switch($order['status']) {
+                        case 'pending': $statusClass = 'status-warning'; break;
+                        case 'processing': $statusClass = 'status-info'; break;
+                        case 'shipped': $statusClass = 'status-primary'; break;
+                        case 'delivered': $statusClass = 'status-success'; break;
+                        case 'cancelled': $statusClass = 'status-danger'; break;
+                    }
+                }
+                ?>
+                
+                <div class="status-info">
+                    <span class="status-badge <?php echo $statusClass; ?>">
+                        <?php echo ucfirst($order['status'] ?? 'Pending'); ?>
+                    </span>
+                    <span class="order-date">
+                        <i class="far fa-calendar-alt"></i> Ordered on: <?php echo date('M d, Y H:i', strtotime($order['created_at'])); ?>
+                    </span>
+                </div>
+                
+                <form method="POST" action="view_orders.php" class="status-form">
+                    <div class="form-row">
+                        <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
+                        <div class="form-group">
+                            <label for="new_status" class="admin-form-label">Update Status:</label>
+                            <select id="new_status" name="new_status" class="admin-form-control">
+                                <option value="pending" <?php echo ($order['status'] ?? '') === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                                <option value="processing" <?php echo ($order['status'] ?? '') === 'processing' ? 'selected' : ''; ?>>Processing</option>
+                                <option value="shipped" <?php echo ($order['status'] ?? '') === 'shipped' ? 'selected' : ''; ?>>Shipped</option>
+                                <option value="delivered" <?php echo ($order['status'] ?? '') === 'delivered' ? 'selected' : ''; ?>>Delivered</option>
+                                <option value="cancelled" <?php echo ($order['status'] ?? '') === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                            </select>
+                        </div>
+                        <button type="submit" name="update_status" class="btn btn-primary">Update</button>
+                    </div>
+                </form>
             </div>
-        </div>
-        
-        <!-- Status update form -->
-        <div id="status-form" class="status-form" style="display: none;">
-            <form method="POST" action="">
-                <div class="form-row">
-                    <div class="admin-form-group">
-                        <label for="status" class="admin-form-label">Status:</label>
-                        <select name="status" id="status" class="admin-form-control">
-                            <option value="pending" <?php echo ($order['status'] ?? 'pending') === 'pending' ? 'selected' : ''; ?>>Pending</option>
-                            <option value="processing" <?php echo ($order['status'] ?? '') === 'processing' ? 'selected' : ''; ?>>Processing</option>
-                            <option value="shipped" <?php echo ($order['status'] ?? '') === 'shipped' ? 'selected' : ''; ?>>Shipped</option>
-                            <option value="delivered" <?php echo ($order['status'] ?? '') === 'delivered' ? 'selected' : ''; ?>>Delivered</option>
-                            <option value="cancelled" <?php echo ($order['status'] ?? '') === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                        </select>
+            
+            <div class="order-summary">
+                <h3>Order Summary</h3>
+                <div class="summary-details">
+                    <div class="summary-item">
+                        <span class="label">Subtotal:</span>
+                        <span class="value"><?php echo '$' . number_format($order['total_price'], 2); ?></span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Shipping:</span>
+                        <span class="value">Free</span>
+                    </div>
+                    <div class="summary-item total">
+                        <span class="label">Total:</span>
+                        <span class="value"><?php echo '$' . number_format($order['total_price'], 2); ?></span>
                     </div>
                 </div>
-                <div class="form-actions">
-                    <button type="submit" name="update_status" class="btn btn-primary">Update Status</button>
-                    <button type="button" class="btn btn-outline" onclick="document.getElementById('status-form').style.display = 'none';">Cancel</button>
-                </div>
-            </form>
-        </div>
-        
-        <div class="order-info">
-            <div class="info-section">
-                <h3>Order Details</h3>
-                <div class="info-group">
-                    <span class="info-label">Order Date:</span>
-                    <span class="info-value"><?php echo date('F j, Y h:i A', strtotime($order['created_at'])); ?></span>
-                </div>
-                <div class="info-group">
-                    <span class="info-label">Total Amount:</span>
-                    <span class="info-value price">$<?php echo number_format($order['total_price'], 2); ?></span>
-                </div>
             </div>
-            
-            <div class="info-section">
-                <h3>Customer Information</h3>
-                <div class="info-group">
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <h2><i class="fas fa-user"></i> Customer Information</h2>
+        
+        <div class="customer-details">
+            <div class="customer-info">
+                <div class="info-item">
                     <span class="info-label">Name:</span>
                     <span class="info-value"><?php echo htmlspecialchars($order['username']); ?></span>
                 </div>
-                <div class="info-group">
+                
+                <div class="info-item">
                     <span class="info-label">Email:</span>
                     <span class="info-value"><?php echo htmlspecialchars($order['email']); ?></span>
                 </div>
+                
                 <?php if (isset($order['phone']) && $order['phone']): ?>
-                <div class="info-group">
+                <div class="info-item">
                     <span class="info-label">Phone:</span>
                     <span class="info-value"><?php echo htmlspecialchars($order['phone']); ?></span>
                 </div>
                 <?php endif; ?>
             </div>
+            
+            <?php if ($address): ?>
+            <div class="shipping-info">
+                <h3>Shipping Address</h3>
+                <address>
+                    <?php echo htmlspecialchars($address['address_line1']); ?><br>
+                    <?php if ($address['address_line2']): echo htmlspecialchars($address['address_line2']) . '<br>'; endif; ?>
+                    <?php echo htmlspecialchars($address['city']) . ', ' . htmlspecialchars($address['state']) . ' ' . htmlspecialchars($address['postal_code']); ?><br>
+                    <?php echo htmlspecialchars($address['country']); ?>
+                </address>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -174,265 +201,324 @@ include_once 'includes/header.php';
             </div>
         <?php else: ?>
             <div class="ordered-shoes">
-                <?php foreach ($orderItems as $item): 
-                    $available_sizes = isset($item['size']) ? explode(',', $item['size']) : [];
-                ?>
+                <?php foreach ($orderItems as $item): ?>
                 <div class="order-item-card">
                     <div class="item-image">
                         <?php if (isset($item['image']) && $item['image']): ?>
                             <img src="assets/<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
                         <?php else: ?>
-                            <img src="assets/images/placeholder.png" alt="Shoe image placeholder">
+                            <img src="assets/images/placeholder.png" alt="Product image placeholder">
                         <?php endif; ?>
                     </div>
+                    
                     <div class="item-details">
+                        <h3 class="item-name"><?php echo htmlspecialchars($item['name']); ?></h3>
+                        
                         <div class="item-meta">
                             <?php if (isset($item['brand']) && $item['brand']): ?>
-                                <span class="item-brand"><?php echo htmlspecialchars($item['brand']); ?></span>
+                                <span class="meta-item"><?php echo htmlspecialchars($item['brand']); ?></span>
                             <?php endif; ?>
                             
                             <?php if (isset($item['style']) && $item['style']): ?>
-                                <span class="item-style"><?php echo ucfirst(htmlspecialchars($item['style'])); ?></span>
+                                <span class="meta-item"><?php echo ucfirst(htmlspecialchars($item['style'])); ?></span>
                             <?php endif; ?>
                             
-                            <?php if (isset($item['gender']) && $item['gender']): ?>
-                                <span class="item-gender"><?php echo ucfirst(htmlspecialchars($item['gender'])); ?></span>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <h3 class="item-name"><?php echo htmlspecialchars($item['name']); ?></h3>
-                        
-                        <div class="item-specs">
                             <?php if (isset($item['color']) && $item['color']): ?>
-                                <div class="item-color">
-                                    <span class="color-dot" style="background-color: <?php echo $item['color']; ?>"></span>
-                                    <span><?php echo ucfirst($item['color']); ?></span>
+                                <div class="meta-item color">
+                                    <span class="color-dot" style="background-color: <?php echo htmlspecialchars($item['color']); ?>"></span>
+                                    <span><?php echo ucfirst(htmlspecialchars($item['color'])); ?></span>
                                 </div>
                             <?php endif; ?>
                             
-                            <?php if (!empty($available_sizes)): ?>
-                                <div class="item-size">
-                                    <span>Size: </span>
-                                    <strong><?php echo ucfirst($available_sizes[0]); ?></strong>
-                                </div>
+                            <?php if (isset($item['size']) && $item['size']): ?>
+                                <span class="meta-item">Size: <?php echo htmlspecialchars($item['size']); ?></span>
                             <?php endif; ?>
-                        </div>
-                        
-                        <div class="item-quantity">
-                            <span>Quantity: </span>
-                            <strong><?php echo $item['quantity']; ?></strong>
                         </div>
                     </div>
-                    <div class="item-pricing">
-                        <div class="item-price">$<?php echo number_format($item['price'], 2); ?></div>
-                        <div class="item-subtotal">
-                            <span>Subtotal:</span>
-                            <strong>$<?php echo number_format($item['price'] * $item['quantity'], 2); ?></strong>
+                    
+                    <div class="item-quantity">
+                        <span>Qty: <?php echo $item['quantity']; ?></span>
+                    </div>
+                    
+                    <div class="item-price">
+                        <div class="price-info">
+                            <span class="price-label">Unit Price:</span>
+                            <span class="price-value">$<?php echo number_format($item['price'], 2); ?></span>
+                        </div>
+                        <div class="price-info total">
+                            <span class="price-label">Subtotal:</span>
+                            <span class="price-value">$<?php echo number_format($item['price'] * $item['quantity'], 2); ?></span>
                         </div>
                     </div>
                 </div>
                 <?php endforeach; ?>
-                
-                <div class="order-summary">
-                    <div class="summary-row total">
-                        <span>Total:</span>
-                        <strong>$<?php echo number_format($order['total_price'], 2); ?></strong>
-                    </div>
-                </div>
             </div>
         <?php endif; ?>
     </div>
 </div>
 
 <style>
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--space-4);
+/* Order details specific styles */
+.order-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+}
+
+@media (max-width: 768px) {
+    .order-header {
+        grid-template-columns: 1fr;
     }
-    
-    .status-badge-container {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
+}
+
+.order-status-section h2,
+.order-summary h3 {
+    margin-bottom: var(--space-4);
+}
+
+.status-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.order-date {
+    color: var(--neutral-600);
+    font-size: 0.9rem;
+}
+
+.status-form {
+    margin-top: var(--space-4);
+}
+
+.status-form .form-row {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-end;
+}
+
+.status-form .form-group {
+    flex: 1;
+}
+
+.summary-details {
+    background-color: var(--neutral-50);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--neutral-200);
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-item.total {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 2px solid var(--neutral-300);
+    font-weight: var(--font-bold);
+    font-size: 1.1rem;
+}
+
+.customer-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+}
+
+@media (max-width: 768px) {
+    .customer-details {
+        grid-template-columns: 1fr;
     }
-    
-    .status-badge.large {
-        font-size: 1rem;
-    }
-    
-    .status-form {
-        background-color: var(--neutral-50);
-        padding: var(--space-4);
-        border-radius: var(--radius-lg);
-        margin-bottom: var(--space-4);
-    }
-    
-    .order-info {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: var(--space-6);
-    }
-    
-    .info-section {
-        margin-bottom: var(--space-4);
-    }
-    
-    .info-section h3 {
-        margin-bottom: var(--space-3);
-        color: var(--neutral-700);
-        font-size: var(--text-lg);
-        border-bottom: 1px solid var(--neutral-200);
-        padding-bottom: var(--space-2);
-    }
-    
-    .info-group {
-        margin-bottom: var(--space-2);
-        display: flex;
-    }
-    
-    .info-label {
-        font-weight: var(--font-medium);
-        min-width: 100px;
-    }
-    
-    .info-value {
-        color: var(--neutral-700);
-    }
-    
-    .info-value.price {
-        color: var(--primary-600);
-        font-weight: var(--font-bold);
-    }
-    
-    .ordered-shoes {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4);
-    }
-    
+}
+
+.info-item {
+    margin-bottom: var(--space-3);
+}
+
+.info-label {
+    font-weight: var(--font-medium);
+    display: inline-block;
+    width: 80px;
+}
+
+.shipping-info h3 {
+    margin-bottom: var(--space-3);
+}
+
+.shipping-info address {
+    font-style: normal;
+    line-height: 1.5;
+}
+
+.ordered-shoes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.order-item-card {
+    display: grid;
+    grid-template-columns: 100px 1fr auto auto;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border: 1px solid var(--neutral-200);
+    border-radius: var(--radius-md);
+    align-items: center;
+}
+
+@media (max-width: 992px) {
     .order-item-card {
-        display: grid;
-        grid-template-columns: 100px 1fr auto;
-        gap: var(--space-4);
-        padding: var(--space-4);
-        border: 1px solid var(--neutral-200);
-        border-radius: var(--radius-lg);
+        grid-template-columns: 80px 1fr auto;
+        grid-template-areas:
+            "image details price"
+            "image quantity quantity";
     }
     
     .item-image {
-        width: 100px;
-        height: 100px;
-        border-radius: var(--radius-md);
-        overflow: hidden;
+        grid-area: image;
     }
     
-    .item-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .item-meta {
-        display: flex;
-        gap: var(--space-2);
-        margin-bottom: var(--space-2);
-    }
-    
-    .item-brand,
-    .item-style,
-    .item-gender {
-        background-color: var(--neutral-100);
-        padding: 2px 8px;
-        border-radius: var(--radius-md);
-        font-size: 0.75rem;
-    }
-    
-    .item-name {
-        margin-bottom: var(--space-2);
-    }
-    
-    .item-specs {
-        display: flex;
-        gap: var(--space-4);
-        margin-bottom: var(--space-2);
-        font-size: 0.9rem;
-    }
-    
-    .item-color {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    
-    .color-dot {
-        display: inline-block;
-        width: 15px;
-        height: 15px;
-        border-radius: 50%;
-        border: 1px solid var(--neutral-300);
+    .item-details {
+        grid-area: details;
     }
     
     .item-quantity {
-        font-size: 0.9rem;
-    }
-    
-    .item-pricing {
-        text-align: right;
+        grid-area: quantity;
     }
     
     .item-price {
-        font-size: 1.1rem;
-        margin-bottom: var(--space-2);
+        grid-area: price;
     }
-    
-    .item-subtotal {
-        font-size: 0.9rem;
+}
+
+@media (max-width: 576px) {
+    .order-item-card {
+        grid-template-columns: 80px 1fr;
+        grid-template-areas:
+            "image details"
+            "quantity price";
     }
-    
-    .item-subtotal strong {
-        font-size: 1.1rem;
-        color: var(--primary-600);
-    }
-    
-    .order-summary {
-        margin-top: var(--space-4);
-        padding-top: var(--space-4);
-        border-top: 2px solid var(--neutral-300);
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-    }
-    
-    .summary-row {
-        display: flex;
-        gap: var(--space-5);
-        align-items: center;
-        margin-bottom: var(--space-2);
-    }
-    
-    .summary-row.total {
-        font-size: 1.25rem;
-    }
-    
-    .summary-row.total strong {
-        color: var(--primary-600);
-    }
-    
-    @media (max-width: 768px) {
-        .order-item-card {
-            grid-template-columns: 80px 1fr;
-        }
-        
-        .item-pricing {
-            grid-column: 1 / 3;
-            text-align: left;
-            display: flex;
-            justify-content: space-between;
-            margin-top: var(--space-2);
-        }
-    }
+}
+
+.item-image {
+    width: 100px;
+    height: 100px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.item-name {
+    margin: 0 0 var(--space-2) 0;
+    font-size: var(--text-lg);
+}
+
+.item-meta {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    font-size: 0.85rem;
+    padding: 2px 8px;
+    background-color: var(--neutral-100);
+    border-radius: var(--radius-full);
+    color: var(--neutral-700);
+}
+
+.meta-item.color {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.color-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid var(--neutral-300);
+}
+
+.item-quantity {
+    font-weight: var(--font-medium);
+}
+
+.price-info {
+    margin-bottom: var(--space-2);
+    text-align: right;
+}
+
+.price-label {
+    color: var(--neutral-600);
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.price-value {
+    font-weight: var(--font-medium);
+}
+
+.price-info.total .price-value {
+    font-weight: var(--font-bold);
+    color: var(--primary-600);
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: var(--font-medium);
+    text-transform: capitalize;
+}
+
+.status-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-primary {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.status-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status-default {
+    background-color: #e9ecef;
+    color: #495057;
+}
 </style>
 
 <?php include 'includes/footer.php'; ?>

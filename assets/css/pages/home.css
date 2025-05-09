@@ -6,7 +6,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: black;
+  color: white; /* Changed to white for better contrast against the dark overlay */
   padding: var(--space-10) 0;
   text-align: center;
   margin-bottom: var(--space-8);
@@ -20,10 +20,10 @@
   width: 100%;
   height: 100%;
   background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
-        url('assets/images/hero.png'); /* Using the same path that worked before */
+        url('../../images/hero.png'); /* Updated path to hero.png */
   background-size: cover;
   background-position: center;
-  filter: blur(1px);
+  filter: blur(1px); /* 1px blur as requested */
   z-index: 1;
 }
 
@@ -37,12 +37,22 @@
 .hero h1 {
   font-size: var(--text-4xl);
   margin-bottom: var(--space-4);
-  color: black;
+  color: white; /* Changed to white for visibility */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Added shadow for better readability */
 }
 
 .hero p {
   font-size: var(--text-xl);
   margin-bottom: var(--space-5);
+  color: white; /* Changed to white for visibility */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Added shadow for better readability */
+}
+
+/* Hero buttons styling */
+.hero-buttons {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
 }
 
 /* Container inside hero should be above the blurred background */
@@ -78,13 +88,15 @@
 .about-image {
   border-radius: var(--radius-lg);
   overflow: hidden;
+  height: 80vh;
   box-shadow: 0 10px 25px var(--shadow);
 }
 
 .about-image img {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
+  object-fit: fill;
   transition: transform 0.5s ease;
 }
 
@@ -117,43 +129,70 @@
   
 /* Featured Categories */
 .featured-categories {
-  margin-bottom: var(--space-8);
+  margin-bottom: 2rem;
 }
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
 }
 
 .category-card {
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  color: white;
+  text-decoration: none;
+  display: block;
+}
+
+.category-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.category-card:hover .category-bg {
+  transform: scale(1.05);
+}
+
+.category-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 1.5rem;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+}
+
+.category-content h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.category-content p {
+  margin-bottom: 0.75rem;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.shop-now {
+  color: #e0e0e0;
+  font-weight: 500;
+  display: inline-flex;
   align-items: center;
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  background-color: var(--background);
-  box-shadow: 0 2px 10px var(--shadow);
-  transition: all 0.3s ease;
-  color: var(--text);
-  text-align: center;
+  gap: 0.5rem;
 }
 
-.category-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px var(--shadow);
-  color: var(--primary-500);
-}
-
-.category-icon {
-  font-size: 2.5rem;
-  margin-bottom: var(--space-3);
-  color: var(--primary-500);
-}
-
-.category-card h3 {
-  font-size: var(--text-lg);
-  font-weight: var(--font-medium);
+.category-card:hover .shop-now {
+  color: white;
 }
 
 /* Benefits Section */

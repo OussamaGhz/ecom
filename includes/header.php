@@ -130,16 +130,16 @@ if (session_status() === PHP_SESSION_NONE) {
             <?php else: ?>
             <!-- Regular User Navigation -->
             <ul class="nav-list">
-                <li><a href="index.php" class="nav-link">Home</a></li>
-                <li><a href="index.php?gender=men" class="nav-link">Men</a></li>
-                <li><a href="index.php?gender=women" class="nav-link">Women</a></li>
-                <li><a href="index.php?gender=kids" class="nav-link">Kids</a></li>
-                <li><a href="index.php?category=athletic" class="nav-link">Athletic</a></li>
-                <li><a href="index.php?category=casual" class="nav-link">Casual</a></li>
-                <li><a href="index.php?category=formal" class="nav-link">Formal</a></li>
-                <li><a href="index.php?category=boots" class="nav-link">Boots</a></li>
-                <li><a href="sale.php" class="nav-link sale">Sale</a></li>
-            </ul>
+    <li><a href="index.php" class="nav-link">Home</a></li>
+    <li><a href="category.php?gender=men" class="nav-link">Men</a></li>
+    <li><a href="category.php?gender=women" class="nav-link">Women</a></li>
+    <li><a href="category.php?gender=kids" class="nav-link">Kids</a></li>
+    <li><a href="category.php?category=athletic" class="nav-link">Athletic</a></li>
+    <li><a href="category.php?category=casual" class="nav-link">Casual</a></li>
+    <li><a href="category.php?category=formal" class="nav-link">Formal</a></li>
+    <li><a href="category.php?category=boots" class="nav-link">Boots</a></li>
+    <li><a href="sale.php" class="nav-link sale">Sale</a></li>
+</ul>
             <?php endif; ?>
 
             <!-- Mobile menu button -->
@@ -160,14 +160,13 @@ if (session_status() === PHP_SESSION_NONE) {
                 <li><a href="index.php">View Store</a></li>
             <?php else: ?>
                 <li><a href="index.php">Home</a></li>
-                <li><a href="index.php?gender=men">Men</a></li>
-                <li><a href="index.php?gender=women">Women</a></li>
-                <li><a href="index.php?gender=kids">Kids</a></li>
-                <li><a href="index.php?category=athletic">Athletic</a></li>
-                <li><a href="index.php?category=casual">Casual</a></li>
-                <li><a href="index.php?category=formal">Formal</a></li>
-                <li><a href="index.php?category=boots">Boots</a></li>
-                <li><a href="sale.php">Sale</a></li>
+        <li><a href="category.php?gender=men">Men</a></li>
+        <li><a href="category.php?gender=women">Women</a></li>
+        <li><a href="category.php?gender=kids">Kids</a></li>
+        <li><a href="category.php?category=athletic">Athletic</a></li>
+        <li><a href="category.php?category=casual">Casual</a></li>
+        <li><a href="category.php?category=formal">Formal</a></li>
+        <li><a href="category.php?category=boots">Boots</a></li>
             <?php endif; ?>
             
             <?php if (isLoggedIn()): ?>

@@ -47,15 +47,56 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['add_item'])) {
     exit();
 }
 
-// Deleting an item
 if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
-
-    $stmt = $conn->prepare("DELETE FROM items WHERE id = :id");
-    $stmt->execute([':id' => $id]);
-
-    header("Location: manage_items.php?deleted=1");
-    exit();
+    $id = intval($_GET['delete']); // Ensure ID is an integer
+    
+    try {
+        // First check if the item exists
+        $checkStmt = $conn->prepare("SELECT id FROM items WHERE id = :id");
+        $checkStmt->execute([':id' => $id]);
+        
+        if ($checkStmt->rowCount() === 0) {
+            // Item doesn't exist
+            $_SESSION['error'] = "The item you're trying to delete doesn't exist.";
+            header("Location: manage_items.php");
+            exit();
+        }
+        
+        // Check if item is referenced in order_items table
+        $orderCheckStmt = $conn->prepare("SELECT COUNT(*) FROM order_items WHERE item_id = :id");
+        $orderCheckStmt->execute([':id' => $id]);
+        $orderCount = $orderCheckStmt->fetchColumn();
+        
+        if ($orderCount > 0) {
+            // Check if active column exists in the items table
+            $columnCheckStmt = $conn->query("SHOW COLUMNS FROM items LIKE 'active'");
+            
+            if ($columnCheckStmt->rowCount() == 0) {
+                // Add active column if it doesn't exist
+                $conn->exec("ALTER TABLE items ADD COLUMN active TINYINT(1) DEFAULT 1");
+            }
+            
+            // Item is referenced in orders - don't delete, just mark as out of stock and inactive
+            $updateStmt = $conn->prepare("UPDATE items SET stock = 0, active = 0 WHERE id = :id");
+            $updateStmt->execute([':id' => $id]);
+            
+            $_SESSION['warning'] = "This shoe is referenced in orders. It has been marked as inactive/out of stock rather than deleted.";
+            header("Location: manage_items.php");
+            exit();
+        } else {
+            // Safe to delete - no order references
+            $deleteStmt = $conn->prepare("DELETE FROM items WHERE id = :id");
+            $deleteStmt->execute([':id' => $id]);
+            
+            $_SESSION['success'] = "Shoe has been deleted successfully.";
+            header("Location: manage_items.php");
+            exit();
+        }
+    } catch (PDOException $e) {
+        $_SESSION['error'] = "Database error: " . $e->getMessage();
+        header("Location: manage_items.php");
+        exit();
+    }
 }
 
 // Build query based on filters
@@ -111,6 +152,23 @@ include_once 'includes/header.php';
             </a>
         </div>
     </div>
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+        </div>
+    <?php endif; ?>
+    
+    <?php if (isset($_SESSION['warning'])): ?>
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> <?php echo $_SESSION['warning']; unset($_SESSION['warning']); ?>
+        </div>
+    <?php endif; ?>
+    
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger">
+            <i class="fas fa-times-circle"></i> <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+        </div>
+    <?php endif; ?>
 
     <?php if (isset($_GET['success'])): ?>
         <div class="alert alert-success">

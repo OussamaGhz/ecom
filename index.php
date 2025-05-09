@@ -3,310 +3,394 @@ include 'includes/header.php';
 session_start();
 require 'config/database.php';
 
-// Fetch items with filters
-$search = isset($_GET['search']) ? trim($_GET['search']) : '';
-$category = isset($_GET['category']) ? trim($_GET['category']) : '';
-$brand = isset($_GET['brand']) ? trim($_GET['brand']) : '';
-$gender = isset($_GET['gender']) ? trim($_GET['gender']) : '';
-$size = isset($_GET['size']) ? trim($_GET['size']) : '';
-$color = isset($_GET['color']) ? trim($_GET['color']) : '';
+// Fetch featured products (newest arrivals)
+$newArrivalsStmt = $conn->query("SELECT * FROM items ORDER BY id DESC LIMIT 4");
+$newArrivals = $newArrivalsStmt->fetchAll(PDO::FETCH_ASSOC);
 
-$query = "SELECT * FROM items";
-$where_clauses = [];
-$params = [];
+// Fetch best sellers (most ordered items)
+$bestSellersStmt = $conn->query("
+    SELECT i.*, COUNT(oi.item_id) as order_count 
+    FROM items i 
+    JOIN order_items oi ON i.id = oi.item_id 
+    GROUP BY i.id 
+    ORDER BY order_count DESC 
+    LIMIT 4
+");
+$bestSellers = $bestSellersStmt->fetchAll(PDO::FETCH_ASSOC);
 
-if ($search) {
-    $where_clauses[] = "(name LIKE :search OR description LIKE :search OR brand LIKE :search)";
-    $params[':search'] = "%$search%";
-}
-
-if ($category) {
-    $where_clauses[] = "style = :category";
-    $params[':category'] = $category;
-}
-
-if ($brand) {
-    $where_clauses[] = "brand = :brand";
-    $params[':brand'] = $brand;
-}
-
-if ($gender) {
-    $where_clauses[] = "gender = :gender";
-    $params[':gender'] = $gender;
-}
-
-if ($size) {
-    $where_clauses[] = "size = :size";
-    $params[':size'] = $size;
-}
-
-if ($color) {
-    $where_clauses[] = "color = :color";
-    $params[':color'] = $color;
-}
-
-if (!empty($where_clauses)) {
-    $query .= " WHERE " . implode(" AND ", $where_clauses);
-}
-
-// Get brands for filter
-$brandQuery = $conn->query("SELECT DISTINCT brand FROM items WHERE brand IS NOT NULL ORDER BY brand");
-$brands = $brandQuery->fetchAll(PDO::FETCH_COLUMN);
-
-// Get colors for filter
-$colorQuery = $conn->query("SELECT DISTINCT color FROM items WHERE color IS NOT NULL ORDER BY color");
-$colors = $colorQuery->fetchAll(PDO::FETCH_COLUMN);
-
-// Get sizes for filter
-$sizeQuery = $conn->query("SELECT DISTINCT size FROM items WHERE size IS NOT NULL ORDER BY size");
-$sizes = $sizeQuery->fetchAll(PDO::FETCH_COLUMN);
-
-$stmt = $conn->prepare($query);
-foreach ($params as $key => $value) {
-    $stmt->bindValue($key, $value);
-}
-
-$stmt->execute();
-$items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+// Set page title
 $page_title = "Home";
 ?>
 
 <!-- Hero Section -->
 <section class="hero">
-    <div class="hero-background"></div>
-    <div class="container">
-        <div class="hero-content">
-            <h1>Step Into Style</h1>
-            <p>Discover premium footwear for every occasion</p>
-            <a href="#featured-products" class="btn btn-primary btn-lg">Shop Now</a>
+    <div class="hero-background" style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('assets/images/hero.png'); filter: blur(1px);"></div>
+    <div class="container hero-content">
+        <h1 style="color: white; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">Step Into Comfort & Style</h1>
+        <p style="color: white; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);">Discover our premium collection of shoes for every occasion</p>
+        <div class="hero-buttons">
+            <a href="#categories" class="btn btn-primary">Shop Now</a>
+            <a href="about.php" class="btn btn-outline" style="color: white; border-color: white;">Learn More</a>
         </div>
     </div>
 </section>
 
 <!-- About Us Section -->
 <section class="about-section">
-    <div class="container">
-        <div class="about-container">
-            <div class="about-image">
-                <img src="assets/images/store-interior.jpg" alt="ShoeHaven store interior">
-            </div>
-            <div class="about-content">
-                <h2>About ShoeHaven</h2>
-                <p class="about-tagline">Crafting comfort for every step since 2010</p>
-                <p>Welcome to ShoeHaven, where passion for footwear meets exceptional service. We believe that the right pair of shoes can transform not just your outfit, but your day.</p>
-                <p>Our carefully curated collection features premium brands and styles for every occasion—from athletic performance shoes engineered for optimal support to elegant formal options that make a statement.</p>
-                <p>Founded by footwear enthusiasts with over 20 years of industry experience, we're committed to helping you find the perfect fit for your lifestyle and budget.</p>
-                <a href="about.php" class="btn btn-outline">Learn More About Us</a>
-            </div>
+    <div class="container about-container">
+        <div class="about-image">
+            <img src="assets/images/about1.png" alt="ShoeHaven store interior">
+        </div>
+        <div class="about-content">
+            <h2>Welcome to ShoeHaven</h2>
+            <p class="about-tagline">Crafting comfort for every step since 2010</p>
+            <p>Welcome to ShoeHaven, where passion for footwear meets exceptional service. We believe that the right pair of shoes can transform not just your outfit, but your day.</p>
+            <p>Our carefully curated collection features premium brands and styles for every occasion—from athletic performance shoes engineered for optimal support to elegant formal options that make a statement.</p>
+            <a href="about.php" class="btn btn-outline">Learn More About Us</a>
         </div>
     </div>
 </section>
 
 <!-- Featured Categories -->
-<section class="featured-categories">
+<section id="categories" class="featured-categories">
     <div class="container">
         <h2 class="section-title">Shop by Category</h2>
         <div class="category-grid">
-            <a href="index.php?category=athletic" class="category-card">
-                <div class="category-icon"><i class="fas fa-running"></i></div>
-                <h3>Athletic</h3>
+            <a href="category.php?category=athletic" class="category-card">
+                <div class="category-image">
+                    <img src="assets/images/categories/athletic.png" alt="Athletic shoes">
+                </div>
+                <div class="category-overlay"></div>
+                <div class="category-info">
+                    <h3>Athletic</h3>
+                    <p>Performance shoes for sports & training</p>
+                    <span class="shop-now">Shop Now <i class="fas fa-arrow-right"></i></span>
+                </div>
             </a>
-            <a href="index.php?category=casual" class="category-card">
-                <div class="category-icon"><i class="fas fa-shoe-prints"></i></div>
-                <h3>Casual</h3>
+            <a href="category.php?category=casual" class="category-card">
+                <div class="category-image">
+                    <img src="assets/images/categories/casual.jpg" alt="Casual shoes">
+                </div>
+                <div class="category-overlay"></div>
+                <div class="category-info">
+                    <h3>Casual</h3>
+                    <p>Everyday comfort & style</p>
+                    <span class="shop-now">Shop Now <i class="fas fa-arrow-right"></i></span>
+                </div>
             </a>
-            <a href="index.php?category=formal" class="category-card">
-                <div class="category-icon"><i class="fas fa-briefcase"></i></div>
-                <h3>Formal</h3>
+            <a href="category.php?category=formal" class="category-card">
+                <div class="category-image">
+                    <img src="assets/images/categories/formal.jpg" alt="Formal shoes">
+                </div>
+                <div class="category-overlay"></div>
+                <div class="category-info">
+                    <h3>Formal</h3>
+                    <p>Elegant shoes for special occasions</p>
+                    <span class="shop-now">Shop Now <i class="fas fa-arrow-right"></i></span>
+                </div>
             </a>
-            <a href="index.php?category=boots" class="category-card">
-                <div class="category-icon"><i class="fas fa-hiking"></i></div>
-                <h3>Boots</h3>
+            <a href="category.php?category=boots" class="category-card">
+                <div class="category-image">
+                    <img src="assets/images/categories/boots.jpg" alt="Boots">
+                </div>
+                <div class="category-overlay"></div>
+                <div class="category-info">
+                    <h3>Boots</h3>
+                    <p>Durable & stylish for any weather</p>
+                    <span class="shop-now">Shop Now <i class="fas fa-arrow-right"></i></span>
+                </div>
             </a>
         </div>
     </div>
 </section>
 
-<!-- Filter Section -->
-<section class="filter-section">
-    <div class="container">
-        <div class="filter-container">
-            <form id="filter-form" method="GET" action="index.php">
-                <div class="filter-group">
-                    <label for="gender">Gender</label>
-                    <select name="gender" id="gender" class="filter-select">
-                        <option value="">All</option>
-                        <option value="men" <?php echo $gender == 'men' ? 'selected' : ''; ?>>Men</option>
-                        <option value="women" <?php echo $gender == 'women' ? 'selected' : ''; ?>>Women</option>
-                        <option value="kids" <?php echo $gender == 'kids' ? 'selected' : ''; ?>>Kids</option>
-                        <option value="unisex" <?php echo $gender == 'unisex' ? 'selected' : ''; ?>>Unisex</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="brand">Brand</label>
-                    <select name="brand" id="brand" class="filter-select">
-                        <option value="">All Brands</option>
-                        <?php foreach($brands as $brandOption): ?>
-                            <option value="<?php echo htmlspecialchars($brandOption); ?>" <?php echo $brand == $brandOption ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($brandOption); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="size">Size</label>
-                    <select name="size" id="size" class="filter-select">
-                        <option value="">All Sizes</option>
-                        <?php foreach($sizes as $sizeOption): ?>
-                            <option value="<?php echo htmlspecialchars($sizeOption); ?>" <?php echo $size == $sizeOption ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($sizeOption); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="color">Color</label>
-                    <select name="color" id="color" class="filter-select">
-                        <option value="">All Colors</option>
-                        <?php foreach($colors as $colorOption): ?>
-                            <option value="<?php echo htmlspecialchars($colorOption); ?>" <?php echo $color == $colorOption ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($colorOption); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">Apply Filters</button>
-                <a href="index.php" class="btn btn-outline">Clear Filters</a>
-            </form>
-        </div>
-    </div>
-</section>
-
-<!-- Products Section -->
-<section id="featured-products" class="products-section">
+<!-- Latest Arrivals Section -->
+<section class="latest-arrivals">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">
-                <?php if ($category): ?>
-                    <?php echo htmlspecialchars(ucfirst($category)); ?> Shoes
-                <?php elseif ($search): ?>
-                    Search results for: "<?php echo htmlspecialchars($search); ?>"
-                <?php else: ?>
-                    Featured Shoes
-                <?php endif; ?>
-            </h2>
-            
-            <?php if (!$search && !$category && !$brand && !$gender && !$size && !$color): ?>
-                <div class="section-actions">
-                    <a href="index.php?sort=newest" class="btn btn-outline btn-sm">Newest</a>
-                    <a href="index.php?sort=popular" class="btn btn-outline btn-sm">Popular</a>
-                </div>
-            <?php endif; ?>
+            <h2 class="section-title">New Arrivals</h2>
+            <a href="category.php?sort=newest" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
         </div>
-
-        <?php if (empty($items)): ?>
-            <div class="empty-state">
-                <i class="fas fa-search"></i>
-                <p>No shoes found matching your criteria. Try different filters or browse our collections.</p>
-                <a href="index.php" class="btn btn-primary">View All Shoes</a>
-            </div>
-        <?php else: ?>
-            <div class="products-grid">
-                <?php foreach ($items as $item): ?>
-                    <div class="product-card">
-                        <div class="product-image">
-                            <?php if ($item['image']): ?>
-                                <img src="assets/<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
-                            <?php else: ?>
-                                <img src="assets/images/placeholder.png" alt="Shoe image placeholder">
-                            <?php endif; ?>
-                            
-                            <?php if (isset($item['is_sale']) && $item['is_sale']): ?>
-                                <div class="product-badge badge-sale">Sale</div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="product-details">
-                            <div class="brand-name"><?php echo htmlspecialchars($item['brand'] ?? ''); ?></div>
-                            <h3 class="product-name"><?php echo htmlspecialchars($item['name']); ?></h3>
-                            <div class="product-price">$<?php echo number_format($item['price'], 2); ?></div>
-                            
-                            <div class="product-meta">
-                                <?php if (isset($item['color']) && $item['color']): ?>
-                                    <span class="meta-item color-dot" style="background-color: <?php echo htmlspecialchars($item['color']); ?>"></span>
-                                <?php endif; ?>
-                                
-                                <?php if (isset($item['gender']) && $item['gender']): ?>
-                                    <span class="meta-item"><?php echo ucfirst(htmlspecialchars($item['gender'])); ?></span>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <div class="product-actions">
-                                <a href="item.php?id=<?php echo $item['id']; ?>" class="btn btn-primary">
-                                    <i class="fas fa-eye"></i> View Details
-                                </a>
-                            </div>
-                        </div>
+        <div class="products-slider">
+            <?php foreach ($newArrivals as $item): ?>
+                <div class="product-card">
+                    <div class="product-image">
+                        <?php if ($item['image']): ?>
+                            <img src="assets/<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
+                        <?php else: ?>
+                            <img src="assets/images/placeholder.png" alt="Shoe image placeholder">
+                        <?php endif; ?>
+                        <div class="product-badge badge-new">New</div>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+                    <div class="product-details">
+                        <?php if (isset($item['brand']) && $item['brand']): ?>
+                            <div class="product-brand"><?php echo htmlspecialchars($item['brand']); ?></div>
+                        <?php endif; ?>
+                        <h3 class="product-name"><?php echo htmlspecialchars($item['name']); ?></h3>
+                        <div class="product-price">$<?php echo number_format($item['price'], 2); ?></div>
+                        <a href="item.php?id=<?php echo $item['id']; ?>" class="btn btn-sm btn-primary">View Details</a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+
+<!-- Best Sellers Section -->
+<section class="best-sellers">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Best Sellers</h2>
+            <a href="category.php?sort=popular" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="products-slider">
+            <?php foreach ($bestSellers as $item): ?>
+                <div class="product-card">
+                    <div class="product-image">
+                        <?php if ($item['image']): ?>
+                            <img src="assets/<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
+                        <?php else: ?>
+                            <img src="assets/images/placeholder.png" alt="Shoe image placeholder">
+                        <?php endif; ?>
+                        <div class="product-badge badge-bestseller">Best Seller</div>
+                    </div>
+                    <div class="product-details">
+                        <?php if (isset($item['brand']) && $item['brand']): ?>
+                            <div class="product-brand"><?php echo htmlspecialchars($item['brand']); ?></div>
+                        <?php endif; ?>
+                        <h3 class="product-name"><?php echo htmlspecialchars($item['name']); ?></h3>
+                        <div class="product-price">$<?php echo number_format($item['price'], 2); ?></div>
+                        <a href="item.php?id=<?php echo $item['id']; ?>" class="btn btn-sm btn-primary">View Details</a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+
+
+
+<!-- Featured Collection Banner -->
+<section class="promo-banner" style="background-image: url('assets/images/collection.png'); background-size: cover; background-position: center; height: 60vh; display: flex; align-items: center; justify-content: center; color: white;">
+    <div class="container">
+        <div class="promo-content">
+            <h2>Summer Collection 2025</h2>
+            <p>Discover our lightweight and comfortable shoes perfect for warm weather</p>
+            <a href="category.php?collection=summer" class="btn btn-light">Shop the Collection</a>
+        </div>
     </div>
 </section>
 
 <!-- Benefits Section -->
 <section class="benefits-section">
     <div class="container">
-        <h2 class="section-title">Why Shop With Us</h2>
         <div class="benefits-grid">
             <div class="benefit-card">
                 <div class="benefit-icon">
-                    <i class="fas fa-medal"></i>
+                    <i class="fas fa-check-circle"></i>
                 </div>
-                <h3>Premium Quality</h3>
-                <p>We partner with trusted brands to bring you footwear made from high-quality materials built to last.</p>
+                <h3>Quality Guaranteed</h3>
+                <p>We source only the highest quality shoes from trusted brands and manufacturers.</p>
             </div>
-            
             <div class="benefit-card">
                 <div class="benefit-icon">
-                    <i class="fas fa-shipping-fast"></i>
+                    <i class="fas fa-truck"></i>
                 </div>
                 <h3>Fast Delivery</h3>
-                <p>Free shipping on orders over $50 with express delivery options available. Most orders arrive within 2-5 business days.</p>
+                <p>Enjoy free shipping on orders over $50 with quick delivery to your doorstep.</p>
             </div>
-            
-            <div class="benefit-card">
-                <div class="benefit-icon">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <h3>Secure Shopping</h3>
-                <p>Shop with confidence knowing your personal and payment information is protected with advanced encryption.</p>
-            </div>
-            
             <div class="benefit-card">
                 <div class="benefit-icon">
                     <i class="fas fa-exchange-alt"></i>
                 </div>
                 <h3>Easy Returns</h3>
-                <p>Not the perfect fit? Free returns within 30 days of purchase, no questions asked.</p>
+                <p>Not the right fit? Return within 30 days for a full refund or exchange.</p>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Secure Shopping</h3>
+                <p>Shop with confidence knowing your personal information is protected.</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Featured Promotion -->
-<section class="promo-banner">
-    <div class="container">
-        <div class="promo-content">
-            <h2>Summer Sale</h2>
-            <p>Get 30% off on all athletic shoes!</p>
-            <a href="index.php?category=athletic" class="btn btn-light">Shop Now</a>
-        </div>
-    </div>
-</section>
+<style>
+/* Enhanced styles for the homepage */
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-5);
+    margin-top: var(--space-6);
+}
+
+.category-card {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 5px 15px var(--shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    display: block;
+    color: inherit;
+    height: 100%;
+    background: white;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px var(--shadow);
+}
+
+.category-image {
+    height: 200px;
+    overflow: hidden;
+}
+
+.category-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.category-card:hover .category-image img {
+    transform: scale(1.05);
+}
+
+.category-info {
+    padding: var(--space-4);
+    text-align: center;
+}
+
+.category-info h3 {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-xl);
+}
+
+.category-info p {
+    color: var(--neutral-600);
+    margin-bottom: var(--space-3);
+}
+
+.shop-now {
+    color: var(--primary-500);
+    font-weight: var(--font-medium);
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.category-card:hover .shop-now {
+    transform: translateX(5px);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-5);
+}
+
+.view-all {
+    color: var(--primary-500);
+    font-weight: var(--font-medium);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.view-all:hover {
+    color: var(--primary-600);
+}
+
+.products-slider {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--space-4);
+}
+
+.latest-arrivals,
+.best-sellers {
+    padding: var(--space-8) 0;
+}
+
+.best-sellers {
+    background-color: var(--neutral-50);
+}
+
+.product-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: var(--font-medium);
+}
+
+.badge-new {
+    background-color: var(--primary-500);
+    color: white;
+}
+
+.badge-bestseller {
+    background-color: #ff6b6b;
+    color: white;
+}
+
+.badge-sale {
+    background-color: #fcc419;
+    color: var(--neutral-800);
+}
+
+.product-brand {
+    color: var(--neutral-600);
+    font-size: 0.85rem;
+    margin-bottom: var(--space-1);
+}
+
+.product-card {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 5px 15px var(--shadow);
+    transition: transform 0.3s ease;
+    background: white;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.product-image {
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-details {
+    padding: var(--space-4);
+    text-align: center;
+}
+
+.product-name {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-lg);
+}
+
+.product-price {
+    font-weight: var(--font-bold);
+    color: var(--primary-500);
+    margin-bottom: var(--space-3);
+    font-size: 1.1rem;
+}
+</style>
 
 <?php include 'includes/footer.php'; ?>
