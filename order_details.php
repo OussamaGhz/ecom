@@ -21,36 +21,22 @@ if (!isset($_GET['order_id']) || empty($_GET['order_id'])) {
 $order_id = intval($_GET['order_id']);
 
 try {
-    // Get order details
-    $orderStmt = $conn->prepare("
-        SELECT orders.*, users.username, users.email, users.phone 
-        FROM orders 
-        LEFT JOIN users ON orders.user_id = users.id 
-        WHERE orders.id = :order_id
-    ");
-    $orderStmt->execute([':order_id' => $order_id]);
-    $order = $orderStmt->fetch(PDO::FETCH_ASSOC);
+    // Call the stored procedure
+    $stmt = $conn->prepare("CALL GetOrderDetails(:order_id)");
+    $stmt->execute([':order_id' => $order_id]);
     
-    if (!$order) {
-        $_SESSION['error'] = "Order not found.";
-        header("Location: view_orders.php");
-        exit();
-    }
+    // Fetch order information
+    $order = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    // Get order items
-    $itemsStmt = $conn->prepare("
-        SELECT oi.*, i.name, i.brand, i.style, i.image, i.size, i.color
-        FROM order_items oi
-        JOIN items i ON oi.item_id = i.id
-        WHERE oi.order_id = :order_id
-    ");
-    $itemsStmt->execute([':order_id' => $order_id]);
-    $orderItems = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get shipping address if available
-    $addressStmt = $conn->prepare("SELECT * FROM shipping_addresses WHERE order_id = :order_id");
-    $addressStmt->execute([':order_id' => $order_id]);
-    $address = $addressStmt->fetch(PDO::FETCH_ASSOC);
+    // Move to next result set (items)
+    $stmt->nextRowset();
+    $orderItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Move to last result set (total)
+    $stmt->nextRowset();
+    $totalInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+    $orderTotal = $totalInfo['total_amount'];
     
 } catch (PDOException $e) {
     $_SESSION['error'] = "Database error: " . $e->getMessage();

@@ -22,6 +22,13 @@ $bestSellers = $bestSellersStmt->fetchAll(PDO::FETCH_ASSOC);
 $page_title = "Home";
 ?>
 
+<?php if(isset($_GET['order_success']) && $_GET['order_success'] === 'true'): ?>
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i>
+        Your order #<?php echo htmlspecialchars($_GET['order_id']); ?> has been placed successfully!
+    </div>
+<?php endif; ?>
+
 <!-- Hero Section -->
 <section class="hero">
     <div class="hero-background" style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('assets/images/hero.png'); filter: blur(1px);"></div>

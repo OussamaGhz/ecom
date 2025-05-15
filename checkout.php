@@ -44,22 +44,40 @@ if (!empty($cart_items)) {
 
 // Handle checkout
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($items)) {
+    
     try {
         $conn->beginTransaction();
 
-        // Insert the order
-        $stmt = $conn->prepare("INSERT INTO orders (user_id, total_price) VALUES (:user_id, :total_price)");
+        // Get address details from the form
+        $address = $_POST['address'];
+        $city = $_POST['city'];
+        $postal_code = $_POST['zip'];
+        $user_id = $_SESSION['user_id'];
+        $order_id = null;
+
+        // Call the FinalizeOrder stored procedure
+        $stmt = $conn->prepare("CALL FinalizeOrder(:user_id, :address, :city, :postal_code, @order_id)");
         $stmt->execute([
-            ':user_id' => $_SESSION['user_id'],
-            ':total_price' => $total
+            ':user_id' => $user_id,
+            ':address' => $address,
+            ':city' => $city,
+            ':postal_code' => $postal_code
+        ]);
+        
+        // Get the output parameter (order_id)
+        $result = $conn->query("SELECT @order_id as order_id")->fetch(PDO::FETCH_ASSOC);
+        $order_id = $result['order_id'];
+
+        // Update the total price
+        $updateTotal = $conn->prepare("UPDATE orders SET total_price = :total WHERE id = :order_id");
+        $updateTotal->execute([
+            ':total' => $total,
+            ':order_id' => $order_id
         ]);
 
-        $order_id = $conn->lastInsertId();
-
-        // Insert each item into order_items table and update stock
+        // Insert each item into order_items table
         $stmt = $conn->prepare("INSERT INTO order_items (order_id, item_id, quantity, price) VALUES (:order_id, :item_id, :quantity, :price)");
-        $updateStockStmt = $conn->prepare("UPDATE items SET stock = stock - :quantity WHERE id = :id AND stock >= :quantity");
-
+        
         foreach ($items as $item) {
             $stmt->execute([
                 ':order_id' => $order_id,
@@ -67,11 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($items)) {
                 ':quantity' => $item['quantity'],
                 ':price' => $item['price']
             ]);
-
-            $updateStockStmt->execute([
-                ':quantity' => $item['quantity'],
-                ':id' => $item['id']
-            ]);
+            // Note: Stock updates now happen via the after_order_item_insert trigger
         }
 
         $conn->commit();
@@ -79,9 +93,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($items)) {
         // Clear the cart
         unset($_SESSION['cart']);
 
-        // Redirect to confirmation page
-        header("Location: confirmation.php?order_id=" . $order_id);
-        exit();
+        // Make sure nothing has been output before this point
+        ob_clean(); // Clear any output buffer
+        
+        // Redirect to home page with success message
+        header("Location: index.php ");
+        exit(); // Make sure to exit immediately after redirect
         
     } catch (Exception $e) {
         $conn->rollBack();
