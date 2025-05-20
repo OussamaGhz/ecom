@@ -2,6 +2,11 @@
 session_start();
 require 'config/database.php';
 
+$shoe_styles = ['athletic', 'casual', 'formal', 'boots', 'sandals', 'heels', 'sneakers'];
+    $shoe_brands = ['Nike', 'Adidas', 'Puma', 'Reebok', 'New Balance', 'Converse', 'Vans', 'Dr. Martens', 'Clarks', 'Timberland'];
+    $shoe_colors = ['black', 'white', 'red', 'blue', 'green', 'brown', 'gray', 'beige', 'multicolor'];
+    $shoe_genders = ['men', 'women', 'unisex', 'kids'];
+
 // Check if admin is logged in
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: admin_login.php");
@@ -24,10 +29,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['add_item'])) {
     $brand = $_POST['brand'] ?? '';
     $style = $_POST['style'] ?? '';
     $gender = $_POST['gender'] ?? '';
-    $size = $_POST['size'] ?? '';
     $color = $_POST['color'] ?? '';
+    
+    // Handle sizes as a comma-separated string
+    $sizes = isset($_POST['sizes']) ? implode(',', $_POST['sizes']) : '';
+    
+    // Initialize image path
+    $image = '';
+    
+    // Handle image upload
+    if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+        $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        $filename = $_FILES['image']['name'];
+        $file_tmp = $_FILES['image']['tmp_name'];
+        $file_size = $_FILES['image']['size'];
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        
+        // Check file extension
+        if (in_array($ext, $allowed)) {
+            // Check file size - 2MB max
+            if ($file_size <= 2097152) {
+                // Create directory if it doesn't exist
+                $upload_dir = 'assets/images/products/';
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0755, true);
+                }
+                
+                // Generate unique filename
+                $new_filename = 'shoe_' . uniqid() . '.' . $ext;
+                $upload_path = $upload_dir . $new_filename;
+                
+                if (move_uploaded_file($file_tmp, $upload_path)) {
+                    $image = 'images/products/' . $new_filename;
+                } else {
+                    $_SESSION['error'] = "Failed to upload image. Please try again.";
+                }
+            } else {
+                $_SESSION['error'] = "Image file is too large. Maximum size is 2MB.";
+            }
+        } else {
+            $_SESSION['error'] = "Invalid file type. Allowed types: JPG, PNG, WEBP, GIF.";
+        }
+    }
 
-    $stmt = $conn->prepare("INSERT INTO items (name, description, price, stock, brand, style, gender, size, color) VALUES (:name, :description, :price, :stock, :brand, :style, :gender, :size, :color)");
+    $stmt = $conn->prepare("INSERT INTO items (name, description, price, stock, brand, style, gender, size, color, image) 
+                           VALUES (:name, :description, :price, :stock, :brand, :style, :gender, :size, :color, :image)");
     $stmt->execute([
         ':name' => $name,
         ':description' => $description,
@@ -36,12 +82,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['add_item'])) {
         ':brand' => $brand,
         ':style' => $style,
         ':gender' => $gender,
-        ':size' => $size,
-        ':color' => $color
+        ':size' => $sizes,
+        ':color' => $color,
+        ':image' => $image
     ]);
-
-    // Handle image upload if implemented
-    // ...
 
     header("Location: manage_items.php?success=1");
     exit();
@@ -185,85 +229,102 @@ include_once 'includes/header.php';
     
 
     <div class="admin-card">
-        <h2><i class="fas fa-plus-circle"></i> Add New Shoe</h2>
+    <h2><i class="fas fa-plus-circle"></i> Add New Shoe</h2>
+    
+    <form method="POST" action="" class="admin-form" enctype="multipart/form-data">
+        <div class="form-row">
+            <div class="admin-form-group">
+                <label for="name" class="admin-form-label">Shoe Name</label>
+                <input type="text" id="name" name="name" class="admin-form-control" required>
+            </div>
+            
+            <div class="admin-form-group">
+                <label for="brand" class="admin-form-label">Brand</label>
+                <select id="brand" name="brand" class="admin-form-control">
+                    <option value="">Select Brand</option>
+                    <?php foreach ($shoe_brands as $brand): ?>
+                        <option value="<?php echo $brand; ?>"><?php echo $brand; ?></option>
+                    <?php endforeach; ?>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+        </div>
         
-        <form method="POST" action="" class="admin-form" enctype="multipart/form-data">
-            <div class="form-row">
-                <div class="admin-form-group">
-                    <label for="name" class="admin-form-label">Shoe Name</label>
-                    <input type="text" id="name" name="name" class="admin-form-control" required>
-                </div>
-                
-                <div class="admin-form-group">
-                    <label for="brand" class="admin-form-label">Brand</label>
-                    <input type="text" id="brand" name="brand" class="admin-form-control">
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="admin-form-group">
-                    <label for="style" class="admin-form-label">Category</label>
-                    <select id="style" name="style" class="admin-form-control">
-                        <option value="">Select Category</option>
-                        <option value="athletic">Athletic</option>
-                        <option value="casual">Casual</option>
-                        <option value="formal">Formal</option>
-                        <option value="boots">Boots</option>
-                        <option value="sandals">Sandals</option>
-                    </select>
-                </div>
-                
-                <div class="admin-form-group">
-                    <label for="gender" class="admin-form-label">Gender</label>
-                    <select id="gender" name="gender" class="admin-form-control">
-                        <option value="">Select Gender</option>
-                        <option value="men">Men</option>
-                        <option value="women">Women</option>
-                        <option value="unisex">Unisex</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="admin-form-group">
-                    <label for="size" class="admin-form-label">Size</label>
-                    <input type="text" id="size" name="size" class="admin-form-control">
-                </div>
-                
-                <div class="admin-form-group">
-                    <label for="color" class="admin-form-label">Color</label>
-                    <input type="text" id="color" name="color" class="admin-form-control">
-                </div>
+        <div class="form-row">
+            <div class="admin-form-group">
+                <label for="style" class="admin-form-label">Style</label>
+                <select id="style" name="style" class="admin-form-control">
+                    <option value="">Select Style</option>
+                    <?php foreach ($shoe_styles as $style): ?>
+                        <option value="<?php echo $style; ?>"><?php echo ucfirst($style); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             
             <div class="admin-form-group">
-                <label for="description" class="admin-form-label">Description</label>
-                <textarea id="description" name="description" class="admin-form-control" required></textarea>
-            </div>
-            
-            <div class="form-row">
-                <div class="admin-form-group">
-                    <label for="price" class="admin-form-label">Price ($)</label>
-                    <input type="number" id="price" name="price" step="0.01" min="0" class="admin-form-control" required>
-                </div>
-                
-                <div class="admin-form-group">
-                    <label for="stock" class="admin-form-label">Stock</label>
-                    <input type="number" id="stock" name="stock" min="0" class="admin-form-control" required>
-                </div>
+                <label for="gender" class="admin-form-label">Gender</label>
+                <select id="gender" name="gender" class="admin-form-control">
+                    <option value="">Select Gender</option>
+                    <?php foreach ($shoe_genders as $gender): ?>
+                        <option value="<?php echo $gender; ?>"><?php echo ucfirst($gender); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             
             <div class="admin-form-group">
-                <label for="image" class="admin-form-label">Shoe Image</label>
-                <input type="file" id="image" name="image" class="admin-form-control">
-                <small class="form-text">Recommended size: 800x800px. Max file size: 2MB.</small>
+                <label for="color" class="admin-form-label">Color</label>
+                <select id="color" name="color" class="admin-form-control">
+                    <option value="">Select Color</option>
+                    <?php foreach ($shoe_colors as $color): ?>
+                        <option value="<?php echo $color; ?>"><?php echo ucfirst($color); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        
+        <div class="admin-form-group">
+            <label class="admin-form-label">Available Sizes</label>
+            <div class="size-options">
+                <?php 
+                $size_range = range(5, 13);
+                foreach ($size_range as $size): 
+                ?>
+                    <label class="size-option">
+                        <input type="checkbox" name="sizes[]" value="<?php echo $size; ?>">
+                        <?php echo $size; ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        
+        <div class="admin-form-group">
+            <label for="description" class="admin-form-label">Description</label>
+            <textarea id="description" name="description" class="admin-form-control" rows="4" required></textarea>
+        </div>
+        
+        <div class="form-row">
+            <div class="admin-form-group">
+                <label for="price" class="admin-form-label">Price ($)</label>
+                <input type="number" id="price" name="price" step="0.01" min="0" class="admin-form-control" required>
             </div>
             
-            <button type="submit" name="add_item" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Add Shoe
-            </button>
-        </form>
-    </div>
+            <div class="admin-form-group">
+                <label for="stock" class="admin-form-label">Stock</label>
+                <input type="number" id="stock" name="stock" min="0" class="admin-form-control" required>
+            </div>
+        </div>
+        
+        <div class="admin-form-group">
+            <label for="image" class="admin-form-label">Shoe Image</label>
+            <input type="file" id="image" name="image" class="admin-form-control" accept="image/jpeg,image/png,image/webp">
+            <small class="form-text">Recommended size: 800x800px. Max file size: 2MB.</small>
+        </div>
+        
+        <button type="submit" name="add_item" class="btn btn-primary" style="background-color: var(--primary-500);">
+            <i class="fas fa-plus"></i> Add Shoe
+        </button>
+    </form>
+</div>
 <!-- Filter navigation -->
 <div class="filter-navigation">
         <a href="manage_items.php" class="filter-link <?php echo (!$filter && !$category) ? 'active' : ''; ?>">All Shoes</a>
@@ -305,13 +366,9 @@ include_once 'includes/header.php';
                     <?php foreach ($items as $item): ?>
                         <tr>
                             <td>
-                                <div class="product-thumbnail">
-                                    <?php if (isset($item['image']) && $item['image']): ?>
-                                        <img src="assets/<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
-                                    <?php else: ?>
-                                        <img src="assets/images/placeholder.png" alt="Product image placeholder">
-                                    <?php endif; ?>
-                                </div>
+                            <div class="product-thumbnail">
+        <img src="image.php?id=<?php echo $item['id']; ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
+    </div>
                             </td>
                             <td><?php echo htmlspecialchars($item['name']); ?></td>
                             <td><?php echo isset($item['brand']) ? htmlspecialchars($item['brand']) : '-'; ?></td>
@@ -425,6 +482,31 @@ include_once 'includes/header.php';
         grid-template-columns: 1fr 1fr;
         gap: 1.5rem;
         margin-bottom: 1rem;
+    }
+
+    .size-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: var(--space-2);
+    }
+    
+    .size-option {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border: 1px solid var(--neutral-300);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+    }
+    
+    .size-option:hover {
+        background-color: var(--neutral-100);
+    }
+    
+    .size-option input[type="checkbox"] {
+        margin: 0;
     }
     
     @media (max-width: 768px) {

@@ -3,7 +3,8 @@ CREATE TABLE items (
     name VARCHAR(255) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     stock INT NOT NULL DEFAULT 0,
-    image VARCHAR(255),
+    image_data MEDIUMBLOB,
+    image_mime VARCHAR(100),
     brand VARCHAR(100),
     style VARCHAR(50),  -- athletic, casual, formal, boots
     color VARCHAR(50),

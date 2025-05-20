@@ -56,35 +56,28 @@ if (isset($_GET['delete'])) {
     exit();
 }
 
-// Handle updating quantities
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_cart'])) {
-    foreach ($_POST['quantities'] as $item_id => $quantity) {
-        $item_id = intval($item_id);
-        $quantity = intval($quantity);
+/// Add this where you process quantity updates
+if (isset($_POST['update_cart'])) {
+    foreach ($_POST['quantity'] as $item_id => $quantity) {
+        $item_id = (int)$item_id;
+        $quantity = (int)$quantity;
         
-        // Find the stock for this item
-        $stock = 0;
-        foreach ($items as $item) {
-            if ($item['id'] == $item_id) {
-                $stock = $item['stock'];
-                break;
-            }
-        }
+        // Verify stock availability
+        $stmt = $conn->prepare("SELECT stock FROM items WHERE id = ?");
+        $stmt->execute([$item_id]);
+        $available_stock = $stmt->fetchColumn();
         
-        // Validate the quantity against the stock
-        if ($quantity > $stock) {
-            $quantity = $stock;
-            $_SESSION['warning'] = "Some quantities were adjusted to match available stock.";
-        }
-        
-        if ($quantity > 0) {
+        if ($quantity <= 0) {
+            unset($_SESSION['cart'][$item_id]);
+        } elseif ($quantity <= $available_stock) {
             $_SESSION['cart'][$item_id] = $quantity;
         } else {
-            unset($_SESSION['cart'][$item_id]);
+            // Not enough stock, set to maximum available
+            $_SESSION['cart'][$item_id] = $available_stock;
+            $_SESSION['warning'] = "Some items in your cart were adjusted due to stock limitations.";
         }
     }
     
-    $_SESSION['success'] = "Cart updated successfully.";
     header("Location: cart.php");
     exit();
 }
@@ -172,16 +165,18 @@ include 'includes/header.php';
                             </div>
                             
                             <div class="item-quantity">
-                                <div class="quantity-label">Quantity:</div>
-                                <div class="quantity-selector">
-                                    <button type="button" class="qty-btn minus"><i class="fas fa-minus"></i></button>
-                                    <input type="number" name="quantities[<?php echo $item['id']; ?>]" value="<?php echo $item['quantity']; ?>" min="1" max="<?php echo $item['stock']; ?>" class="qty-input">
-                                    <button type="button" class="qty-btn plus"><i class="fas fa-plus"></i></button>
-                                </div>
-                                <div class="stock-info">
-                                    <?php echo $item['stock']; ?> available
-                                </div>
-                            </div>
+            <div class="quantity-label">Quantity:</div>
+            <div class="quantity-selector">
+                <button type="button" class="qty-btn minus"><i class="fas fa-minus"></i></button>
+                <input type="number" name="quantity[<?php echo $item['id']; ?>]" 
+                       min="1" max="<?php echo $item['stock']; ?>" 
+                       value="<?php echo $item['quantity']; ?>" class="qty-input">
+                <button type="button" class="qty-btn plus"><i class="fas fa-plus"></i></button>
+            </div>
+            <?php if ($item['quantity'] >= $item['stock']): ?>
+                <div class="stock-warning">Max stock reached</div>
+            <?php endif; ?>
+        </div>
                             
                             <div class="item-subtotal">
                                 <div class="subtotal-label">Subtotal:</div>
@@ -480,6 +475,7 @@ include 'includes/header.php';
 }
 
 .checkout-btn {
+    background-color: var(--primary-600);
     margin-top: var(--space-5);
     width: 100%;
     padding: var(--space-3);

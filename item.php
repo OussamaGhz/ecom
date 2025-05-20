@@ -50,151 +50,58 @@ include 'includes/header.php';
     </nav>
 
     <div class="product-detail">
-        <div class="product-gallery">
-            <div class="main-image">
-                <?php if ($item['image']): ?>
-                    <img src="assets/<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
-                <?php else: ?>
-                    <img src="assets/images/placeholder.png" alt="Shoe image placeholder">
-                <?php endif; ?>
-            </div>
-            <div class="thumbnail-gallery">
-                <!-- Placeholder thumbnails - in a real implementation, you'd have multiple images -->
-                <div class="thumbnail active">
-                    <?php if ($item['image']): ?>
-                        <img src="assets/<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
-                    <?php else: ?>
-                        <img src="assets/images/placeholder.png" alt="Shoe image placeholder">
-                    <?php endif; ?>
-                </div>
-                <div class="thumbnail">
-                    <img src="assets/images/shoe-angle2.png" alt="Side view">
-                </div>
-                <div class="thumbnail">
-                    <img src="assets/images/shoe-angle3.png" alt="Back view">
-                </div>
-                <div class="thumbnail">
-                    <img src="assets/images/shoe-angle4.png" alt="Top view">
-                </div>
-            </div>
-        </div>
-        
-        <div class="product-info">
-            <?php if (isset($item['brand']) && $item['brand']): ?>
-                <div class="product-brand"><?php echo htmlspecialchars($item['brand']); ?></div>
-            <?php endif; ?>
-            
-            <h1 class="product-title"><?php echo htmlspecialchars($item['name']); ?></h1>
-            
-            <div class="product-meta">
-                <?php if (isset($item['style']) && $item['style']): ?>
-                    <span class="meta-item style"><?php echo ucfirst(htmlspecialchars($item['style'])); ?></span>
-                <?php endif; ?>
-                
-                <?php if (isset($item['gender']) && $item['gender']): ?>
-                    <span class="meta-item gender"><?php echo ucfirst(htmlspecialchars($item['gender'])); ?></span>
-                <?php endif; ?>
-            </div>
-            
-            <div class="product-price">$<?php echo number_format($item['price'], 2); ?></div>
-            
-            <?php if ($item['stock'] > 0): ?>
-                <div class="stock-status in-stock">
-                    <i class="fas fa-check-circle"></i> In Stock
-                </div>
-            <?php else: ?>
-                <div class="stock-status out-of-stock">
-                    <i class="fas fa-times-circle"></i> Out of Stock
-                </div>
-            <?php endif; ?>
-            
-            <form action="cart_add.php" method="POST" class="product-form">
-                <input type="hidden" name="item_id" value="<?php echo $item['id']; ?>">
-                
-                <?php if (isset($item['color']) && $item['color']): ?>
-                    <div class="form-group">
-                        <label>Color</label>
-                        <div class="color-swatch">
-                            <div class="swatch-option selected" style="background-color: <?php echo htmlspecialchars($item['color']); ?>"></div>
-                        </div>
-                        <input type="hidden" name="color" value="<?php echo htmlspecialchars($item['color']); ?>">
-                    </div>
-                <?php endif; ?>
-                
-                <?php if (isset($item['size']) && $item['size']): ?>
-                    <div class="form-group">
-                        <label>Size</label>
-                        <div class="size-options">
-                            <?php
-                            // Display available sizes - in a real implementation, you'd have multiple sizes
-                            $sizes = explode(',', $item['size']);
-                            foreach ($sizes as $sizeOption):
-                                $sizeOption = trim($sizeOption);
-                            ?>
-                                <div class="size-option <?php echo $sizeOption === trim($item['size']) ? 'selected' : ''; ?>"
-                                     data-size="<?php echo htmlspecialchars($sizeOption); ?>">
-                                    <?php echo htmlspecialchars($sizeOption); ?>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                        <input type="hidden" name="size" value="<?php echo htmlspecialchars($item['size']); ?>">
-                    </div>
-                <?php endif; ?>
-                
-                <div class="form-group">
-                    <label>Quantity</label>
-                    <div class="quantity-selector">
-                        <button type="button" class="qty-btn minus"><i class="fas fa-minus"></i></button>
-                        <input type="number" name="quantity" value="1" min="1" max="<?php echo $item['stock']; ?>">
-                        <button type="button" class="qty-btn plus"><i class="fas fa-plus"></i></button>
-                    </div>
-                </div>
-                
-                <div class="product-actions">
-                    <button type="submit" class="btn btn-primary btn-lg" <?php echo $item['stock'] <= 0 ? 'disabled' : ''; ?>>
-                        <i class="fas fa-shopping-cart"></i> Add to Cart
-                    </button>
-                    <button type="button" class="btn btn-outline btn-icon">
-                        <i class="far fa-heart"></i>
-                    </button>
-                </div>
-            </form>
-            
-            <div class="product-description">
-                <h3>Description</h3>
-                <p><?php echo nl2br(htmlspecialchars($item['description'])); ?></p>
-            </div>
-            
-            <div class="product-features">
-                <h3>Features</h3>
-                <ul>
-                    <?php if (isset($item['brand']) && $item['brand']): ?>
-                        <li><strong>Brand:</strong> <?php echo htmlspecialchars($item['brand']); ?></li>
-                    <?php endif; ?>
-                    <?php if (isset($item['style']) && $item['style']): ?>
-                        <li><strong>Style:</strong> <?php echo ucfirst(htmlspecialchars($item['style'])); ?></li>
-                    <?php endif; ?>
-                    <?php if (isset($item['gender']) && $item['gender']): ?>
-                        <li><strong>Gender:</strong> <?php echo ucfirst(htmlspecialchars($item['gender'])); ?></li>
-                    <?php endif; ?>
-                    <?php if (isset($item['color']) && $item['color']): ?>
-                        <li><strong>Color:</strong> <?php echo ucfirst(htmlspecialchars($item['color'])); ?></li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-            
-            <div class="shipping-info">
-                <div class="info-item">
-                    <i class="fas fa-truck"></i>
-                    <span>Free shipping on orders over $50</span>
-                </div>
-                <div class="info-item">
-                    <i class="fas fa-undo"></i>
-                    <span>30-day return policy</span>
-                </div>
-            </div>
+    <div class="product-gallery">
+        <div class="main-image">
+            <img src="image.php?id=<?php echo $item['id']; ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
         </div>
     </div>
+    
+    <!-- Add the product info section that was missing -->
+    <div class="product-info">
+        <?php if (isset($item['brand']) && $item['brand']): ?>
+            <div class="product-brand"><?php echo htmlspecialchars($item['brand']); ?></div>
+        <?php endif; ?>
+        
+        <h1 class="product-title"><?php echo htmlspecialchars($item['name']); ?></h1>
+        <div class="product-price">$<?php echo number_format($item['price'], 2); ?></div>
+        
+        <?php if ($item['stock'] > 0): ?>
+            <div class="stock-status in-stock">
+                <i class="fas fa-check-circle"></i> In Stock (<?php echo $item['stock']; ?> left)
+            </div>
+        <?php else: ?>
+            <div class="stock-status out-of-stock">
+                <i class="fas fa-times-circle"></i> Out of Stock
+            </div>
+        <?php endif; ?>
+        
+        <div class="product-description">
+            <h3>Description</h3>
+            <p><?php echo nl2br(htmlspecialchars($item['description'])); ?></p>
+        </div>
+        
+        <form method="POST" action="cart_add.php" class="product-form">
+            <input type="hidden" name="item_id" value="<?php echo $item['id']; ?>">
+            
+            <div class="form-group">
+                <label for="quantity">Quantity:</label>
+                <div class="quantity-selector">
+                    <button type="button" class="qty-btn qty-decrease">-</button>
+                    <input type="number" id="quantity" name="quantity" value="1" min="1" max="<?php echo $item['stock']; ?>">
+                    <button type="button" class="qty-btn qty-increase">+</button>
+                </div>
+            </div>
+            
+            <?php if ($item['stock'] > 0): ?>
+                <div class="product-actions">
+                    <button type="submit" name="add_to_cart" class="btn btn-primary">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                </div>
+            <?php endif; ?>
+        </form>
+    </div>
+</div>
 </div>
 
 <style>
@@ -300,168 +207,347 @@ include 'includes/header.php';
         color: var(--primary-600);
         margin-bottom: 1rem;
     }
-    
-    .stock-status {
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+    .breadcrumb {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+    padding: var(--space-4) 0;
+}
+
+.breadcrumb a {
+    color: var(--primary-500);
+    transition: color 0.2s ease;
+}
+
+.breadcrumb a:hover {
+    color: var(--primary-600);
+    text-decoration: underline;
+}
+
+.breadcrumb .separator {
+    margin: 0 0.5rem;
+    color: var(--neutral-400);
+}
+
+.breadcrumb .active {
+    color: var(--neutral-600);
+    font-weight: 500;
+}
+
+/* Enhanced product layout */
+.product-detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-bottom: 4rem;
+    background-color: white;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+/* Image gallery enhancements */
+.product-gallery {
+    position: relative;
+    height: 100%;
+}
+
+.main-image {
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+    margin: 0;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+.main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.7s ease;
+}
+
+.product-gallery:hover .main-image img {
+    transform: scale(1.03);
+}
+
+/* Product info section */
+.product-info {
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+}
+
+.product-brand {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--primary-500);
+    margin-bottom: var(--space-2);
+    font-weight: 600;
+    position: relative;
+    display: inline-block;
+}
+
+.product-brand:after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background-color: var(--primary-500);
+}
+
+.product-title {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-4);
+    line-height: 1.2;
+    color: var(--neutral-800);
+}
+
+.product-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    background-color: var(--neutral-100);
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    color: var(--neutral-700);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.meta-item i {
+    color: var(--primary-500);
+}
+
+.product-price {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: var(--primary-600);
+    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.original-price {
+    font-size: 1.3rem;
+    color: var(--neutral-500);
+    text-decoration: line-through;
+    font-weight: normal;
+}
+
+.stock-status {
+    margin-bottom: var(--space-5);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    width: fit-content;
+}
+
+.in-stock {
+    color: var(--success-500);
+    background-color: rgba(var(--success-rgb), 0.1);
+}
+
+.out-of-stock {
+    color: var(--danger-500);
+    background-color: rgba(var(--danger-rgb), 0.1);
+}
+
+/* Enhanced form elements */
+.product-form {
+    margin-bottom: var(--space-4);
+}
+
+.form-group {
+    margin-bottom: var(--space-4);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-weight: 500;
+    color: var(--neutral-700);
+}
+
+/* Enhanced quantity selector */
+.quantity-selector {
+    display: flex;
+    align-items: stretch;
+    max-width: 180px;
+    height: 50px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--neutral-200);
+}
+
+.qty-btn {
+    width: 50px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--neutral-100);
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--neutral-700);
+    transition: all 0.2s ease;
+}
+
+.qty-btn:hover {
+    background-color: var(--neutral-200);
+    color: var(--primary-600);
+}
+
+.quantity-selector input {
+    width: 80px;
+    height: 100%;
+    text-align: center;
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--neutral-800);
+}
+
+.product-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+}
+
+.product-actions .btn-primary {
+    padding: 1rem 2rem;
+    background-color: var(--primary-500);
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+}
+
+.product-actions .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(var(--primary-rgb), 0.4);
+}
+
+.product-actions .btn-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: white;
+    border: 1px solid var(--neutral-200);
+    color: var(--neutral-700);
+    transition: all 0.2s ease;
+}
+
+.product-actions .btn-icon:hover {
+    background-color: var(--neutral-100);
+    color: var(--primary-500);
+}
+
+/* Product description section */
+.product-description {
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--neutral-200);
+}
+
+.product-description h3 {
+    font-size: 1.3rem;
+    margin-bottom: var(--space-3);
+    color: var(--neutral-800);
+    position: relative;
+    padding-bottom: var(--space-2);
+}
+
+.product-description h3:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background-color: var(--primary-500);
+    border-radius: 2px;
+}
+
+.product-description p {
+    line-height: 1.7;
+    color: var(--neutral-600);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .product-detail {
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
     }
     
-    .in-stock {
-        color: var(--success-500);
+    .product-info {
+        padding: var(--space-4);
     }
     
-    .out-of-stock {
-        color: var(--danger-500);
+    .product-title {
+        font-size: 2rem;
     }
     
-    .product-form {
-        margin-bottom: 2rem;
+    .main-image {
+        min-height: 400px;
+    }
+}
+
+@media (max-width: 768px) {
+    .product-detail {
+        grid-template-columns: 1fr;
+        gap: 1rem;
     }
     
-    .form-group {
-        margin-bottom: 1.5rem;
+    .main-image {
+        min-height: 350px;
     }
     
-    .form-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
+    .product-title {
+        font-size: 1.75rem;
     }
     
-    .color-swatch {
-        display: flex;
-        gap: 0.5rem;
-    }
-    
-    .swatch-option {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        cursor: pointer;
-        border: 2px solid transparent;
-    }
-    
-    .swatch-option.selected {
-        border-color: var(--primary-500);
-    }
-    
-    .size-options {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    
-    .size-option {
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--neutral-300);
-        border-radius: var(--radius-md);
-        cursor: pointer;
-    }
-    
-    .size-option.selected {
-        background-color: var(--primary-500);
-        color: white;
-        border-color: var(--primary-500);
+    .product-price {
+        font-size: 1.8rem;
     }
     
     .quantity-selector {
-        display: flex;
-        align-items: center;
-        max-width: 150px;
-    }
-    
-    .qty-btn {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: var(--neutral-100);
-        border: none;
-        cursor: pointer;
-    }
-    
-    .quantity-selector input {
-        width: 60px;
-        height: 40px;
-        text-align: center;
-        border: 1px solid var(--neutral-300);
-        border-left: none;
-        border-right: none;
+        max-width: 100%;
     }
     
     .product-actions {
-        display: flex;
-        gap: 1rem;
-        margin-top: 2rem;
-    }
-    
-    .btn-icon {
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-    }
-    
-    .product-description {
-        margin-top: 2rem;
-        padding-top: 2rem;
-        border-top: 1px solid var(--neutral-200);
-    }
-    
-    .product-description h3 {
-        margin-bottom: 1rem;
-    }
-    
-    .product-features {
-        margin-top: 2rem;
-    }
-    
-    .product-features h3 {
-        margin-bottom: 1rem;
-    }
-    
-    .product-features ul {
-        list-style-type: none;
-        padding: 0;
-    }
-    
-    .product-features li {
-        margin-bottom: 0.5rem;
-    }
-    
-    .shipping-info {
-        margin-top: 2rem;
-        padding-top: 2rem;
-        border-top: 1px solid var(--neutral-200);
-        display: flex;
         flex-direction: column;
-        gap: 1rem;
     }
     
-    .info-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
+    .product-actions .btn-primary {
+        width: 100%;
     }
-    
-    .info-item i {
-        color: var(--primary-500);
-    }
-    
-    @media (max-width: 768px) {
-        .product-detail {
-            grid-template-columns: 1fr;
-        }
-    }
+}
 </style>
 
 <?php include 'includes/footer.php'; ?>

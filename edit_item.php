@@ -47,32 +47,47 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $gender = $_POST['gender'] ?? '';
     $color = $_POST['color'] ?? '';
     $sizes = isset($_POST['sizes']) ? implode(',', $_POST['sizes']) : '';
-    
     // Handle image upload
-    $image = $item['image']; // Default to existing image
+$image = $item['image']; // Default to existing image
+
+if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    $filename = $_FILES['image']['name'];
+    $file_tmp = $_FILES['image']['tmp_name'];
+    $file_size = $_FILES['image']['size'];
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
     
-    if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-        $filename = $_FILES['image']['name'];
-        $ext = pathinfo($filename, PATHINFO_EXTENSION);
-        
-        if (in_array(strtolower($ext), $allowed)) {
-            $new_filename = 'shoes_' . uniqid() . '.' . $ext;
-            $upload_path = 'assets/images/products/' . $new_filename;
+    // Check file extension
+    if (in_array($ext, $allowed)) {
+        // Check file size - 2MB max
+        if ($file_size <= 2097152) {
+            // Create directory if it doesn't exist
+            $upload_dir = 'assets/images/products/';
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0755, true);
+            }
             
-            if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_path)) {
+            // Generate unique filename
+            $new_filename = 'shoe_' . uniqid() . '.' . $ext;
+            $upload_path = $upload_dir . $new_filename;
+            
+            if (move_uploaded_file($file_tmp, $upload_path)) {
                 // Delete old image if it exists and is not the default
-                if ($item['image'] && $item['image'] != 'placeholder.png' && file_exists('assets/images/products/' . $item['image'])) {
-                    unlink('assets/images/products/' . $item['image']);
+                if ($item['image'] && $item['image'] != 'default.jpg' && file_exists('assets/' . $item['image'])) {
+                    unlink('assets/' . $item['image']);
                 }
                 $image = 'images/products/' . $new_filename;
             } else {
-                $error = "Failed to upload image";
+                $error = "Failed to upload image. Please try again.";
             }
         } else {
-            $error = "Invalid image format. Allowed formats: JPG, JPEG, PNG, WEBP";
+            $error = "Image file is too large. Maximum size is 2MB.";
         }
+    } else {
+        $error = "Invalid file type. Allowed types: JPG, PNG, WEBP, GIF.";
     }
+}
+
 
     if (!$error) {
         try {
@@ -142,6 +157,7 @@ include_once 'includes/header.php';
             <i class="fas fa-times-circle"></i> <?php echo $error; ?>
         </div>
     <?php endif; ?>
+    
 
     <div class="admin-card">
         <h2><i class="fas fa-edit"></i> Edit Shoe Details</h2>
@@ -259,13 +275,9 @@ include_once 'includes/header.php';
         
         <div class="product-preview">
             <div class="product-gallery">
-                <div class="main-image">
-                    <?php if (isset($item['image']) && $item['image']): ?>
-                        <img src="assets/<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
-                    <?php else: ?>
-                        <img src="assets/images/placeholder.png" alt="Product image placeholder">
-                    <?php endif; ?>
-                </div>
+            <div class="main-image">
+    <img src="image.php?id=<?php echo $item['id']; ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
+</div>
             </div>
             
             <div class="product-info">

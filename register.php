@@ -37,8 +37,8 @@ include 'includes/header.php';
 ?>
 
 <div class="container">
-    <div class="auth-wrapper">
-        <div class="auth-form">
+    <div class="auth-wrapper d-flex justify-content-center">
+        <div class="auth-form card shadow">
             <div class="auth-header">
                 <h1>Create an Account</h1>
                 <p>Join our community and start shopping with us today!</p>
@@ -114,14 +114,6 @@ include 'includes/header.php';
             
             <div class="auth-footer">
                 <p>Already have an account? <a href="login.php">Login</a></p>
-            </div>
-        </div>
-        
-        <div class="auth-image">
-            <img src="assets/images/register-image.jpg" alt="Register">
-            <div class="auth-image-overlay">
-                <h2>Join ShopEasy</h2>
-                <p>Get exclusive deals, faster checkout, and personalized recommendations.</p>
             </div>
         </div>
     </div>

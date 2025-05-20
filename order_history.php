@@ -1,7 +1,6 @@
 <?php
 session_start();
 require 'config/database.php';
-include 'includes/header.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -11,23 +10,17 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Use the GetCustomerOrderHistory stored procedure
-$stmt = $conn->prepare("CALL GetCustomerOrderHistory(:user_id)");
+// Fetch orders
+$stmt = $conn->prepare("SELECT o.id, o.created_at, o.status, o.total_price,
+                       (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) AS item_count
+                FROM orders o
+                WHERE o.user_id = :user_id
+                ORDER BY o.created_at DESC");
 $stmt->execute([':user_id' => $user_id]);
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-$stmt->nextRowset();  // Move to the next result set (order items)
-$orderItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Group items by order_id for easier access
-$orderItemsByOrder = [];
-foreach ($orderItems as $item) {
-    if (!isset($orderItemsByOrder[$item['order_id']])) {
-        $orderItemsByOrder[$item['order_id']] = [];
-    }
-    $orderItemsByOrder[$item['order_id']][] = $item;
-}
 
 $page_title = "Order History";
+include 'includes/header.php';
 ?>
 
 <div class="container">
@@ -58,9 +51,9 @@ $page_title = "Order History";
     <?php else: ?>
         <div class="orders-list">
             <?php foreach ($orders as $order): ?>
-                <div class="order-card" data-order-id="<?php echo $order['id']; ?>">
+                <div class="order-card">
                     <div class="order-header">
-                        <div>
+                        <div class="order-info">
                             <h3>Order #<?php echo $order['id']; ?></h3>
                             <span class="order-date"><?php echo date('F j, Y', strtotime($order['created_at'])); ?></span>
                         </div>
@@ -69,40 +62,23 @@ $page_title = "Order History";
                         </div>
                     </div>
                     
-                    <!-- Display order items -->
-                    <div class="order-items">
-                        <?php if (isset($orderItemsByOrder[$order['id']])): ?>
-                            <?php foreach ($orderItemsByOrder[$order['id']] as $item): ?>
-                                <div class="order-item">
-                                    <div class="item-name">
-                                        <?php echo htmlspecialchars($item['name']); ?>
-                                        <?php if ($item['brand']): ?>
-                                            <span class="item-brand"><?php echo htmlspecialchars($item['brand']); ?></span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="item-details">
-                                        <span>Qty: <?php echo $item['quantity']; ?></span>
-                                        <span>$<?php echo number_format($item['price'], 2); ?></span>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                    
-                    <div class="order-summary">
-                        <div class="summary-item">
-                            <span>Items:</span>
-                            <span><?php echo $order['item_count']; ?></span>
+                    <div class="order-details">
+                        <div class="detail-item">
+                            <span class="detail-label"><i class="fas fa-box"></i> Items:</span>
+                            <span class="detail-value"><?php echo $order['item_count']; ?> items</span>
                         </div>
-                        <div class="summary-item">
-                            <span>Total:</span>
-                            <span class="order-total">$<?php echo number_format($order['total_price'], 2); ?></span>
+                        <div class="detail-item">
+                            <span class="detail-label"><i class="fas fa-money-bill-alt"></i> Total:</span>
+                            <span class="detail-value order-total">$<?php echo number_format($order['total_price'], 2); ?></span>
                         </div>
                     </div>
                     
                     <div class="order-actions">
+                        <a href="view_order.php?id=<?php echo $order['id']; ?>" class="btn btn-sm btn-outline">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
                         <?php if ($order['status'] === 'pending'): ?>
-                        <button class="btn btn-outline-danger" onclick="confirmCancel(<?php echo $order['id']; ?>)">
+                        <button class="btn btn-sm btn-outline-danger" onclick="confirmCancel(<?php echo $order['id']; ?>)">
                             <i class="fas fa-times"></i> Cancel Order
                         </button>
                         <?php endif; ?>
@@ -126,87 +102,128 @@ function confirmCancel(orderId) {
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
+    margin-top: 1.5rem;
 }
 
 .order-card {
     border: 1px solid var(--neutral-200);
-    border-radius: var(--radius-md);
-    padding: var(--space-4);
+    border-radius: 8px;
+    padding: 1.25rem;
     background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
 .order-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--space-3);
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--neutral-100);
+}
+
+.order-info h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
 }
 
 .order-date {
     color: var(--neutral-500);
-    font-size: var(--text-sm);
+    font-size: 0.875rem;
 }
 
 .order-status {
     padding: 0.25rem 0.75rem;
-    border-radius: var(--radius-full);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
 }
 
 .status-pending {
-    background-color: var(--neutral-100);
-    color: var(--neutral-700);
+    background-color: #FFF8E1;
+    color: #F57F17;
 }
 
 .status-processing {
-    background-color: #fef3c7;
-    color: #92400e;
+    background-color: #E1F5FE;
+    color: #0277BD;
 }
 
 .status-shipped {
-    background-color: #dbeafe;
-    color: #1e40af;
+    background-color: #E8F5E9;
+    color: #2E7D32;
 }
 
 .status-delivered {
-    background-color: #d1fae5;
-    color: #065f46;
+    background-color: #E0F2F1;
+    color: #00695C;
 }
 
 .status-cancelled {
-    background-color: #fee2e2;
-    color: #b91c1c;
+    background-color: #FFEBEE;
+    color: #C62828;
 }
 
-.order-summary {
+.order-details {
     display: flex;
-    border-top: 1px solid var(--neutral-100);
-    border-bottom: 1px solid var(--neutral-100);
-    padding: var(--space-3) 0;
-    margin-bottom: var(--space-3);
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
 }
 
-.summary-item {
-    flex: 1;
+.detail-item {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    min-width: 120px;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: var(--neutral-500);
+    margin-bottom: 0.25rem;
+}
+
+.detail-value {
+    font-weight: 500;
 }
 
 .order-total {
-    font-weight: var(--font-bold);
     color: var(--primary-600);
+    font-weight: 700;
 }
 
 .order-actions {
     display: flex;
-    gap: var(--space-3);
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--neutral-100);
 }
 
-.centered-content {
-    display: flex;
-    justify-content: center;
-    margin-top: var(--space-6);
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .order-header {
+        flex-direction: column;
+    }
+    
+    .order-status {
+        margin-top: 0.5rem;
+        align-self: flex-start;
+    }
 }
 </style>
 

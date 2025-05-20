@@ -1,7 +1,6 @@
 <?php
 session_start();
 require 'config/database.php';
-include 'includes/header.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -44,65 +43,88 @@ if (!empty($cart_items)) {
 
 // Handle checkout
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($items)) {
+    // Validate stock availability before proceeding
+    $stockError = false;
+    $outOfStockItems = [];
     
-    try {
-        $conn->beginTransaction();
-
-        // Get address details from the form
-        $address = $_POST['address'];
-        $city = $_POST['city'];
-        $postal_code = $_POST['zip'];
-        $user_id = $_SESSION['user_id'];
-        $order_id = null;
-
-        // Call the FinalizeOrder stored procedure
-        $stmt = $conn->prepare("CALL FinalizeOrder(:user_id, :address, :city, :postal_code, @order_id)");
-        $stmt->execute([
-            ':user_id' => $user_id,
-            ':address' => $address,
-            ':city' => $city,
-            ':postal_code' => $postal_code
-        ]);
-        
-        // Get the output parameter (order_id)
-        $result = $conn->query("SELECT @order_id as order_id")->fetch(PDO::FETCH_ASSOC);
-        $order_id = $result['order_id'];
-
-        // Update the total price
-        $updateTotal = $conn->prepare("UPDATE orders SET total_price = :total WHERE id = :order_id");
-        $updateTotal->execute([
-            ':total' => $total,
-            ':order_id' => $order_id
-        ]);
-
-        // Insert each item into order_items table
-        $stmt = $conn->prepare("INSERT INTO order_items (order_id, item_id, quantity, price) VALUES (:order_id, :item_id, :quantity, :price)");
-        
-        foreach ($items as $item) {
-            $stmt->execute([
-                ':order_id' => $order_id,
-                ':item_id' => $item['id'],
-                ':quantity' => $item['quantity'],
-                ':price' => $item['price']
-            ]);
-            // Note: Stock updates now happen via the after_order_item_insert trigger
+    foreach ($items as $item) {
+        if ($item['quantity'] > $item['stock']) {
+            $stockError = true;
+            $outOfStockItems[] = $item['name'];
         }
+    }
 
-        $conn->commit();
-        
-        // Clear the cart
-        unset($_SESSION['cart']);
+    if ($stockError) {
+        $error = "Insufficient stock for: " . implode(", ", $outOfStockItems);
+    } else {
+        try {
+            $conn->beginTransaction();
+    
+            // Get address details from the form
+            $address = $_POST['address'];
+            $city = $_POST['city'];
+            $postal_code = $_POST['zip'];
+            $user_id = $_SESSION['user_id'];
+            $order_id = null;
+    
+            // Call the FinalizeOrder stored procedure
+            $stmt = $conn->prepare("CALL FinalizeOrder(:user_id, :address, :city, :postal_code, @order_id)");
+            $stmt->execute([
+                ':user_id' => $user_id,
+                ':address' => $address,
+                ':city' => $city,
+                ':postal_code' => $postal_code
+            ]);
+            
+            // Get the output parameter (order_id)
+            $result = $conn->query("SELECT @order_id as order_id")->fetch(PDO::FETCH_ASSOC);
+            $order_id = $result['order_id'];
+    
+            // Update the total price
+            $updateTotal = $conn->prepare("UPDATE orders SET total_price = :total WHERE id = :order_id");
+            $updateTotal->execute([
+                ':total' => $total,
+                ':order_id' => $order_id
+            ]);
+    
+            // Insert each item into order_items table
+            $stmt = $conn->prepare("INSERT INTO order_items (order_id, item_id, quantity, price) VALUES (:order_id, :item_id, :quantity, :price)");
+            
+            foreach ($items as $item) {
+                try {
+                    $stmt->execute([
+                        ':order_id' => $order_id,
+                        ':item_id' => $item['id'],
+                        ':quantity' => $item['quantity'],
+                        ':price' => $item['price']
+                    ]);
+                    
+                } catch (PDOException $e) {
+                    // Check for the specific error from the before_order_item_insert trigger
+                    if (strpos($e->getMessage(), 'Requested quantity exceeds available stock') !== false) {
+                        throw new Exception("Not enough stock available for " . htmlspecialchars($item['name']));
+                    } else {
+                        throw $e; // Re-throw if it's a different error
+                    }
+                }
+            }
+            
+            $conn->commit();
 
-        // Make sure nothing has been output before this point
-        ob_clean(); // Clear any output buffer
-        
-        // Redirect to home page with success message
-        header("Location: index.php ");
-        exit(); // Make sure to exit immediately after redirect
-        
-    } catch (Exception $e) {
-        $conn->rollBack();
-        $error = "Failed to place order: " . $e->getMessage();
+            // Clear the cart
+            unset($_SESSION['cart']);
+            
+            // Set success message in session if needed
+            $_SESSION['order_success'] = true;
+            $_SESSION['order_id'] = $order_id;
+            
+            // Redirect to index page - make sure no output has been sent before this
+            header("Location: index.php");
+            exit(); 
+        } catch (Exception $e) {
+            $conn->rollBack();
+            $error = "Failed to place order: " . $e->getMessage();
+        }
     }
 }
 
@@ -110,6 +132,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($items)) {
 $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
 $stmt->execute([':id' => $_SESSION['user_id']]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Now include the header (AFTER all possible redirects)
+include 'includes/header.php';
 ?>
 
 <div class="container">
@@ -211,7 +236,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                     <a href="cart.php" class="btn btn-outline">
                         <i class="fas fa-arrow-left"></i> Return to Cart
                     </a>
-                    <button type="submit" class="btn btn-primary btn-lg">
+                    <button type="submit" class="btn btn-primary btn-lg" style="background-color: var(--primary-500);">
                         <i class="fas fa-lock"></i> Place Order
                     </button>
                 </div>
@@ -242,7 +267,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 </div>
                 <div class="summary-line">
                     <span>Shipping</span>
-                    <span>Free</span>
+                    <span   span>Free</span>
                 </div>
                 <div class="summary-line total">
                     <span>Total</span>

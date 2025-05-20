@@ -36,8 +36,8 @@ include_once 'includes/header.php';
 ?>
 
 <div class="container">
-    <div class="auth-wrapper">
-        <div class="auth-form">
+    <div class="auth-wrapper d-flex justify-content-center">
+        <div class="auth-form card shadow">
             <div class="auth-header">
                 <h1>Login to Your Account</h1>
                 <p>Welcome back! Please enter your credentials to access your account.</p>
@@ -95,14 +95,6 @@ include_once 'includes/header.php';
             <div class="auth-footer">
                 <p>Don't have an account? <a href="register.php">Register</a></p>
                 <p>Are you an admin? <a href="admin_login.php">Login as Admin</a></p>
-            </div>
-        </div>
-        
-        <div class="auth-image">
-            <img src="assets/images/login-image.jpg" alt="Login">
-            <div class="auth-image-overlay">
-                <h2>Welcome to ShopEasy</h2>
-                <p>Your one-stop destination for all your shopping needs.</p>
             </div>
         </div>
     </div>
